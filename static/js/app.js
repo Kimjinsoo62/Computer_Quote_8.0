@@ -196,7 +196,7 @@ function hide(el) {
   el.setAttribute("aria-hidden", "true");
 }
 
-async function openCoupangSearch(keyword, event) {
+function openCoupangSearch(keyword, event) {
   if (event) {
     event.preventDefault();
     event.stopPropagation();
@@ -204,30 +204,7 @@ async function openCoupangSearch(keyword, event) {
   const q = String(keyword || "").trim();
   if (!q) return;
 
-  if (!coupangConfigured) {
-    const goSetup = confirm(
-      "쿠팡 파트너스 API가 아직 설정되지 않았습니다.\n\n" +
-      "「확인」 → 설정 화면 열기\n" +
-      "「취소」 → 일반 쿠팡 검색으로 이동"
-    );
-    if (goSetup) {
-      cpOpen();
-      return;
-    }
-  }
-
-  // q= 만 붙이면 쿠팡이 비정상 접근으로 보고 "사용권한이 없습니다" 페이지를 띄운다.
   const fallback = `https://www.coupang.com/np/search?component=&q=${encodeURIComponent(q)}&channel=user`;
-  try {
-    const res = await fetch(`/api/coupang/link?q=${encodeURIComponent(q)}`);
-    const data = await res.json().catch(() => ({}));
-    if (res.ok && data.url) {
-      window.open(data.url, "_blank", "noopener");
-      return;
-    }
-  } catch (_) {
-    /* 파트너스 API 실패 시 일반 검색 URL로 폴백 */
-  }
   window.open(fallback, "_blank", "noopener");
 }
 
@@ -984,140 +961,7 @@ $("#quoteInfoReset")?.addEventListener("click", async () => {
   }
 });
 
-// ---------- 쿠팡 파트너스 API 설정 모달 ----------
-let coupangConfigured = false;
-let cpModal = null;
 
-function cpSetStatus(msg, ok = true) {
-  const el = $("#coupangStatus");
-  if (!el) return;
-  el.textContent = msg;
-  el.style.color = ok ? "var(--accent, #4caf50)" : "#e53935";
-}
-
-function cpReadForm() {
-  return {
-    access_key: ($("#cpAccessKey")?.value || "").trim(),
-    secret_key: ($("#cpSecretKey")?.value || "").trim(),
-    sub_id: ($("#cpSubId")?.value || "pc-quote").trim() || "pc-quote",
-  };
-}
-
-function cpFillForm(cfg) {
-  if ($("#cpAccessKey")) $("#cpAccessKey").value = cfg?.access_key || "";
-  if ($("#cpSecretKey")) $("#cpSecretKey").value = cfg?.secret_key || "";
-  if ($("#cpSubId")) $("#cpSubId").value = cfg?.sub_id || "pc-quote";
-}
-
-async function refreshCoupangStatus() {
-  try {
-    const res = await fetch("/api/coupang/status");
-    if (!res.ok) return;
-    const data = await res.json();
-    coupangConfigured = !!data.configured;
-    // 히든 영역이므로 title·클래스로 연결 상태를 표시하지 않는다.
-  } catch (_) {
-    /* ignore */
-  }
-}
-
-async function cpLoadConfig() {
-  try {
-    const res = await fetch("/api/coupang/config");
-    if (res.ok) cpFillForm(await res.json());
-  } catch (e) {
-    console.warn("coupang config 로드 실패:", e);
-  }
-  await refreshCoupangStatus();
-}
-
-function cpOpen(event) {
-  if (event) {
-    event.preventDefault();
-    event.stopPropagation();
-  }
-  cpModal = cpModal || $("#coupangModal");
-  if (!cpModal) {
-    alert("설정 화면을 찾을 수 없습니다. Ctrl+F5 로 새로고침 후 다시 시도해 주세요.");
-    return;
-  }
-  cpSetStatus("");
-  show(cpModal);
-  cpLoadConfig();
-}
-
-function cpClose() {
-  cpModal = cpModal || $("#coupangModal");
-  hide(cpModal);
-}
-
-function initCoupangSetup() {
-  cpModal = $("#coupangModal");
-  $("#coupangClose")?.addEventListener("click", cpClose);
-  $("#coupangCancel")?.addEventListener("click", cpClose);
-  cpModal?.addEventListener("click", (e) => {
-    if (e.target === cpModal) cpClose();
-  });
-  $("#coupangOpenPartners")?.addEventListener("click", () => {
-    window.open("https://partners.coupang.com/", "_blank", "noopener");
-  });
-
-  $("#coupangTest")?.addEventListener("click", async () => {
-    cpSetStatus("연결 테스트 중…");
-    try {
-      const res = await fetch("/api/coupang/test", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(cpReadForm()),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.detail || "연결 테스트 실패");
-      cpSetStatus(data.message || "연결 성공!");
-    } catch (e) {
-      cpSetStatus(e.message, false);
-    }
-  });
-
-  $("#coupangSave")?.addEventListener("click", async () => {
-    const payload = cpReadForm();
-    if (!payload.access_key || !payload.secret_key) {
-      cpSetStatus("Access Key와 Secret Key를 입력해 주세요.", false);
-      return;
-    }
-    try {
-      const res = await fetch("/api/coupang/config", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.detail || "저장 실패");
-      cpFillForm(data);
-      await refreshCoupangStatus();
-      cpSetStatus(data.message || "저장되었습니다.");
-    } catch (e) {
-      cpSetStatus(e.message, false);
-    }
-  });
-
-  $("#coupangReset")?.addEventListener("click", async () => {
-    if (!confirm("쿠팡 파트너스 API 설정을 삭제할까요?")) return;
-    try {
-      const res = await fetch("/api/coupang/config", { method: "DELETE" });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.detail || "삭제 실패");
-      cpFillForm({ access_key: "", secret_key: "", sub_id: "pc-quote" });
-      await refreshCoupangStatus();
-      cpSetStatus(data.message || "설정이 삭제되었습니다.");
-    } catch (e) {
-      cpSetStatus(e.message, false);
-    }
-  });
-
-  refreshCoupangStatus();
-}
-
-window.cpOpen = cpOpen;
 
 // ---------- 네트워크 접속 안내 모달 ----------
 let netModal = null;

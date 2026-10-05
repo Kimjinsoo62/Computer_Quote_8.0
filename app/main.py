@@ -19,13 +19,6 @@ from app.config import (
     PRICE_SEARCH_LIMIT,
     QUOTE_DISCLAIMER,
 )
-from app.coupang_config import load_coupang_config, reset_coupang_config, save_coupang_config
-from app.coupang_partners import (
-    create_search_partner_link,
-    is_configured,
-    reload_partner_cache,
-    test_partner_connection,
-)
 from app.excel_export import build_excel
 from app.apple_scraper import fetch_apple_cto_options
 from app.used_market import used_market_links
@@ -185,62 +178,6 @@ async def api_calc_open(request: Request, payload: dict = Body(default={})):
 async def api_logic():
     return {"steps": get_logic_steps()}
 
-
-@app.get("/api/coupang/status")
-async def api_coupang_status():
-    return {"configured": is_configured()}
-
-
-@app.get("/api/coupang/config")
-async def api_coupang_config_get():
-    cfg = load_coupang_config()
-    return {
-        "access_key": cfg["access_key"],
-        "secret_key": cfg["secret_key"],
-        "sub_id": cfg["sub_id"],
-        "configured": bool(cfg["access_key"] and cfg["secret_key"]),
-    }
-
-
-@app.post("/api/coupang/config")
-async def api_coupang_config_save(payload: dict = Body(...)):
-    cfg = save_coupang_config(payload)
-    reload_partner_cache()
-    return {
-        **cfg,
-        "configured": bool(cfg["access_key"] and cfg["secret_key"]),
-        "message": "쿠팡 파트너스 API 설정을 저장했습니다.",
-    }
-
-
-@app.delete("/api/coupang/config")
-async def api_coupang_config_delete():
-    reset_coupang_config()
-    reload_partner_cache()
-    return {"configured": False, "message": "쿠팡 파트너스 API 설정을 삭제했습니다."}
-
-
-@app.post("/api/coupang/test")
-async def api_coupang_test(payload: dict = Body(default={})):
-    result = test_partner_connection(
-        access_key=payload.get("access_key"),
-        secret_key=payload.get("secret_key"),
-        sub_id=payload.get("sub_id"),
-    )
-    if not result.get("ok"):
-        raise HTTPException(status_code=400, detail=result.get("message"))
-    return result
-
-
-@app.get("/api/coupang/link")
-async def api_coupang_link(q: str, sub_id: str = ""):
-    keyword = (q or "").strip()
-    if not keyword:
-        raise HTTPException(status_code=400, detail="검색어(q)가 필요합니다.")
-    try:
-        return create_search_partner_link(keyword, sub_id=sub_id or None)
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e)) from e
 
 
 @app.get("/api/used/links")

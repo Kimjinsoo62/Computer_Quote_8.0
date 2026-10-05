@@ -13,7 +13,6 @@
   <nav class="nav">
     <div class="container nav-inner">
       <div class="nav-brand">
-        <button type="button" id="btnCoupangSecret" class="coupang-secret-hit" aria-hidden="true" tabindex="-1" onclick="cpOpen(event)"></button>
         <a href="/" class="logo">
           <span class="logo-icon">⚡</span>
           <span>컴퓨존 <strong>견적 자동화 Ver 8.0</strong></span>
@@ -214,9 +213,6 @@
 
   <footer class="footer">
     <div class="container footer-inner">
-      <div class="coupang-notice" style="margin-bottom: 8px; padding: 6px 10px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3); border-radius: 6px; text-align: center; color: #f8f9fa; font-weight: 700; font-size: 1rem; word-break: keep-all;">
-        📢 "이 사이트는 쿠팡 파트너스 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받습니다."
-      </div>
       <div class="footer-contact">
         <p><span class="footer-label">이메일</span> <a href="mailto:jskimjskim@gmail.com">jskimjskim@gmail.com</a></p>
         <p><span class="footer-label">개발자</span> 애플아저씨</p>
@@ -225,53 +221,6 @@
       <p class="footer-note">가격은 실시간 수집되며 프로모션에 따라 변동될 수 있습니다. {{ quote_disclaimer }}</p>
     </div>
   </footer>
-
-  <!-- 쿠팡 파트너스 API 설정 모달 -->
-  <div id="coupangModal" class="modal-overlay hidden" aria-hidden="true">
-    <div class="modal modal-lg" role="dialog" aria-labelledby="coupangTitle">
-      <div class="modal-header">
-        <h3 id="coupangTitle">🛒 쿠팡 파트너스 연결</h3>
-        <button type="button" class="modal-close btn-modal-close" id="coupangClose" aria-label="닫기">✕ 닫기</button>
-      </div>
-      <div class="modal-body">
-        <div class="coupang-setup-guide">
-          <p><strong>안내:</strong> 쿠팡은 보안상 <em>로그인만으로 API 키가 자동 연결되지 않습니다.</em> 아래 3단계만 따라 하시면 됩니다.</p>
-          <ol class="coupang-steps">
-            <li>
-              <button type="button" class="btn btn-sm btn-coupang" id="coupangOpenPartners">① 파트너스 사이트 열기 ↗</button>
-              <span>로그인 후 <strong>도구 → API 키 관리</strong>로 이동</span>
-            </li>
-            <li>Access Key · Secret Key 복사</li>
-            <li>아래 입력란에 붙여넣기 → <strong>연결 테스트</strong> → <strong>저장</strong></li>
-          </ol>
-        </div>
-        <fieldset class="modal-group">
-          <legend>API 키</legend>
-          <label class="modal-field">
-            <span>Access Key</span>
-            <input type="text" id="cpAccessKey" autocomplete="off" placeholder="AK..." />
-          </label>
-          <label class="modal-field">
-            <span>Secret Key</span>
-            <input type="password" id="cpSecretKey" autocomplete="off" placeholder="Secret Key" />
-          </label>
-          <label class="modal-field">
-            <span>subId (선택, 클릭 추적용)</span>
-            <input type="text" id="cpSubId" autocomplete="off" placeholder="pc-quote" />
-          </label>
-        </fieldset>
-        <p id="coupangStatus" class="modal-status"></p>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-outline" id="coupangReset">🗑 설정 삭제</button>
-        <div class="modal-footer-right">
-          <button type="button" class="btn btn-outline" id="coupangCancel">닫기</button>
-          <button type="button" class="btn btn-outline" id="coupangTest">🔌 연결 테스트</button>
-          <button type="button" class="btn btn-primary" id="coupangSave">💾 저장</button>
-        </div>
-      </div>
-    </div>
-  </div>
 
   <!-- 견적처/공급자 정보 관리 모달 -->
   <div id="quoteInfoModal" class="modal-overlay hidden" aria-hidden="true">
