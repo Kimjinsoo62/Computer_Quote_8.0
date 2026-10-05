@@ -5,7 +5,9 @@ from __future__ import annotations
 import re
 import urllib.parse
 
-from app.coupang_partners import _is_apple
+def _is_apple(name: str) -> bool:
+    name = name.lower()
+    return any(x in name for x in ["macbook", "mac mini", "imac", "mac studio", "mac pro", "apple"])
 from app.daangn_search import normalize_daangn_keyword
 
 BUNJANG_SEARCH = "https://m.bunjang.co.kr/search/products?order=score&q={query}"

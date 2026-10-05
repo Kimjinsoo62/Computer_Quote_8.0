@@ -12,7 +12,10 @@ import urllib.parse
 import urllib.request
 from typing import Any
 
-from app.coupang_partners import normalize_search_keyword
+def normalize_search_keyword(text: str) -> str:
+    import re
+    text = re.sub(r"\[.*?\]|\(.*?\)|\{.*?\}", "", text)
+    return text.strip()
 
 logger = logging.getLogger(__name__)
 
