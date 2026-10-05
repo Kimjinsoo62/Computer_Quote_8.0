@@ -1,0 +1,39 @@
+# PolyForm Noncommercial License 1.0.0
+
+Copyright (c) 2026 애플아저씨 (jskimjskim@gmail.com)
+
+[요약 안내]
+본 소프트웨어는 개인적·비영리 목적(학습, 연구, 개인적 활용 등)으로 자유롭게 사용, 수정, 배포할 수 있습니다.
+단, 영리 목적, 기업 업무, 상업적 서비스 등 상업적(Commercial) 용도로의 무단 사용 및 배포는 엄격히 금지됩니다. 상업적 이용을 원하실 경우 저작권자에게 사전 서면 허가를 받아야 합니다.
+
+---
+
+## PolyForm Noncommercial License 1.0.0
+https://polyformproject.org/licenses/noncommercial/1.0.0/
+
+### 1. Acceptance
+In order to receive any license under this license, each person or entity must accept all terms in this license. Taking any action that requires a license under this license, such as copying, running, modifying, or distributing this software, indicates your acceptance of all its terms.
+
+### 2. Copyright License
+The licensor grants you a copyright license to do everything with this software that would otherwise infringe the licensor's copyright in it, for any **Noncommercial Purpose**.
+
+### 3. Patent License
+The licensor grants you a patent license to make, use, sell, offer for sale, import, and otherwise run this software, to the extent that infringement of the licensor's patents is necessary to do so, for any **Noncommercial Purpose**.
+
+### 4. Noncommercial Purpose
+A "Noncommercial Purpose" is any purpose other than a commercial purpose. Commercial purposes include:
+(a) selling or licensing the software,
+(b) using the software to provide a service for which you charge a fee,
+(c) using the software in the ordinary course of business, commerce, or trade, and
+(d) charging for access to the software.
+
+Personal, educational, academic, and hobbyist uses are Noncommercial Purposes.
+
+### 5. Notices
+You must ensure that everyone who gets a copy of any part of this software from you, with or without changes, also gets the text of this license or a link to https://polyformproject.org/licenses/noncommercial/1.0.0.
+
+### 6. No Other Rights
+This license does not grant you any license under any trademark, patent (except as granted above), or other intellectual property right of the licensor.
+
+### 7. Disclaimer
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE LICENSORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
