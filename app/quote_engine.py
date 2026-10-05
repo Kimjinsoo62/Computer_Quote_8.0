@@ -1556,3 +1556,117 @@ def fetch_apple_quotes(
         engine="apple-live-catalog",
     )
 
+
+
+def fetch_notebook_quotes_by_price(
+    min_price: int,
+    max_price: int,
+    limit: int = 10,
+) -> tuple[TodayQuotesResult, dict[str, Any]]:
+    """Fetches notebooks matching the price range from Compuzone."""
+    url = "https://www.compuzone.co.kr/search/search_list.php"
+    items = []
+    seen = set()
+    
+    import urllib.request, urllib.parse
+    from datetime import date
+    
+    try:
+        lo = int(min_price)
+        hi = int(max_price)
+    except (TypeError, ValueError) as e:
+        raise ValueError("최소값과 최고값은 숫자로 입력해주세요.") from e
+    if lo < 0 or hi < 0:
+        raise ValueError("금액은 0원 이상이어야 합니다.")
+    if hi < lo:
+        raise ValueError("최고가가 최소값보다 작거나 같습니다.")
+    if hi == 0:
+        raise ValueError("최고값을 입력해주세요.")
+        
+    for page in range(1, 5):
+        data = {
+            "actype": "list",
+            "SearchType": "0",
+            "SearchText": "노트북".encode('euc-kr'),
+            "PreOrder": "sell_num",
+            "PageCount": "60",
+            "StartNum": str((page - 1) * 60),
+            "PageNum": str(page),
+            "ListType": "list",
+        }
+        headers = {
+            "User-Agent": USER_AGENT,
+            "Referer": "https://www.compuzone.co.kr/search/search.htm",
+            "X-Requested-With": "XMLHttpRequest"
+        }
+        try:
+            req = urllib.request.Request(url, data=urllib.parse.urlencode(data).encode(), headers=headers, method="POST")
+            with urllib.request.urlopen(req, timeout=10) as resp:
+                html = resp.read().decode('euc-kr', errors='ignore')
+        except Exception as e:
+            continue
+            
+        for m in re.finditer(
+            r'data-pricetable="(\d+)"[^>]*data-price="([^"]*)"[^>]*data-discountprice="([^"]*)"',
+            html,
+            re.I,
+        ):
+            pno = int(m.group(1))
+            if pno in seen: continue
+            seen.add(pno)
+            
+            lp = m.group(2).replace(',', '')
+            sp = m.group(3).replace(',', '')
+            list_price = int(lp) if lp.isdigit() else 0
+            sale_price = int(sp) if sp.isdigit() else 0
+            price = sale_price if sale_price > 0 else list_price
+            
+            chunk = html[max(0, m.start() - 4000) : m.start()]
+            names = list(re.finditer(r'class="prd_info_name[^>]*>\s*([^<]+)', chunk))
+            name = names[-1].group(1).strip() if names else f"Notebook {pno}"
+            
+            if lo <= price <= hi:
+                items.append({
+                    "pno": pno,
+                    "name": name,
+                    "price": price,
+                })
+                
+    items.sort(key=lambda x: x["price"])
+    if len(items) > limit:
+        items = items[:limit]
+        
+    if not items:
+        raise RuntimeError(f"{lo:,}원 ~ {hi:,}원 구간의 노트북이 없습니다. 금액을 바꿔보세요.")
+        
+    quotes = []
+    for i, item in enumerate(items):
+        q = Quote(
+            tier=f"노트북 {i+1}",
+            tier_key=f"notebook-{item['pno']}",
+            model=item['name'],
+            tab_label=f"{i+1}위",
+            description="",
+            product_no=item['pno'],
+            url=f"https://www.compuzone.co.kr/product/product_detail.htm?ProductNo={item['pno']}",
+            quote_date=date.today().isoformat(),
+            parts=[],
+            parts_subtotal=item['price'],
+            total=item['price'],
+            price_source="컴퓨존",
+            fetched_at=date.today().isoformat()
+        )
+        quotes.append(q)
+        
+    result = TodayQuotesResult(
+        quote_date=date.today().isoformat(),
+        event_url="https://www.compuzone.co.kr/search/search.htm?SearchProductKey=노트북",
+        event_title="노트북 금액대로 찾기",
+        series=f"노트북 {lo:,}원 ~ {hi:,}원",
+        quotes=quotes,
+        logic_steps=[{"title": "검색 결과", "desc": "컴퓨존 인기 노트북 목록에서 해당 가격대의 상품을 필터링했습니다."}],
+        catalog_synced_at=date.today().isoformat(),
+        engine="notebook-search"
+    )
+    
+    return result, {"source": "컴퓨존", "type": "notebook"}

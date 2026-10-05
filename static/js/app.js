@@ -1232,8 +1232,17 @@ $("#btnGamePc")?.addEventListener("click", () => {
 $("#btnPriceSearch")?.addEventListener("click", () => {
   $$(".cat-btn").forEach((b) => b.classList.remove("active"));
   $$(".game-cat-btn").forEach((b) => b.classList.remove("active"));
-  $$(".price-cat-btn").forEach((b) => b.classList.add("active"));
-  activatePriceSearch();
+  $$(".price-cat-btn").forEach((b) => b.classList.remove("active"));
+  $("#btnPriceSearch")?.classList.add("active");
+  activatePriceSearch("assembled");
+});
+
+$("#btnNotebookPriceSearch")?.addEventListener("click", () => {
+  $$(".cat-btn").forEach((b) => b.classList.remove("active"));
+  $$(".game-cat-btn").forEach((b) => b.classList.remove("active"));
+  $$(".price-cat-btn").forEach((b) => b.classList.remove("active"));
+  $("#btnNotebookPriceSearch")?.classList.add("active");
+  activatePriceSearch("notebook");
 });
 
 $$(".apple-cat-btn").forEach((btn) => {
@@ -1287,7 +1296,7 @@ async function fetchQuotes(cat = "ai", forceRefresh = false) {
     return;
   }
   if (cat === "price" || cat === "price-search") {
-    activatePriceSearch();
+    activatePriceSearch(priceTargetType);
     return;
   }
 
@@ -1334,7 +1343,7 @@ async function fetchQuotes(cat = "ai", forceRefresh = false) {
     }
     if (quoteData.needs_price_wizard) {
       hide(loading);
-      activatePriceSearch();
+      activatePriceSearch(priceTargetType);
       return;
     }
 
@@ -1740,12 +1749,11 @@ function applyResultView() {
   show($("#quoteTabs"));
 }
 
-function activatePriceSearch() {
+let priceTargetType = "assembled";
+function activatePriceSearch(targetType = "assembled") {
+  priceTargetType = targetType;
   currentCat = "price";
   updateExtrasUI();
-  $$(".cat-btn").forEach((b) => b.classList.remove("active"));
-  $$(".game-cat-btn").forEach((b) => b.classList.remove("active"));
-  $$(".price-cat-btn").forEach((b) => b.classList.add("active"));
 
   hide($("#error"));
   hide($("#loading"));
@@ -1806,7 +1814,10 @@ async function submitPriceSearch(opts = {}) {
   priceSetStatus("조립PC를 검색하는 중… 추천·아이웍스·프리미엄 목록을 확인합니다.");
   if (submitBtn) submitBtn.disabled = true;
   show(loading);
-  if (loadingText) loadingText.textContent = "금액대에 맞는 조립PC를 검색하는 중…";
+  if (loadingText) {
+    if (priceTargetType === "notebook") loadingText.textContent = "금액대에 맞는 노트북을 검색하는 중…";
+    else loadingText.textContent = "금액대에 맞는 조립PC를 검색하는 중…";
+  }
   hide(errorBox);
   hide(emptyState);
   hide(summaryCards);
@@ -1820,6 +1831,7 @@ async function submitPriceSearch(opts = {}) {
       body: JSON.stringify({
         min_price: minPrice,
         max_price: maxPrice,
+        target_type: priceTargetType,
         monitor: includeMonitor ? 1 : 0,
         keyboard: includeKeyboard ? 1 : 0,
         setup: includeSetup ? 1 : 0,

@@ -29,6 +29,7 @@ from app.quote_engine import (
     fetch_apple_quotes,
     fetch_assembled_quotes,
     fetch_assembled_quotes_by_price,
+    fetch_notebook_quotes_by_price,
     fetch_game_pc_meta,
     fetch_game_pc_quotes,
     fetch_today_quotes,
@@ -354,18 +355,27 @@ async def api_price_search(payload: dict = Body(...)):
         max_price = int(payload.get("max_price") or 0)
     except (TypeError, ValueError) as e:
         raise HTTPException(status_code=400, detail="최저가와 최고가는 숫자로 입력해주세요.") from e
+    
+    target_type = payload.get("target_type", "assembled")
     monitor = bool(payload.get("monitor", 0))
     keyboard = bool(payload.get("keyboard", 0))
     setup = bool(payload.get("setup", 0))
     try:
-        result, meta = fetch_assembled_quotes_by_price(
-            min_price,
-            max_price,
-            include_monitor=monitor,
-            include_keyboard=keyboard,
-            include_setup=setup,
-            limit=PRICE_SEARCH_LIMIT,
-        )
+        if target_type == "notebook":
+            result, meta = fetch_notebook_quotes_by_price(
+                min_price,
+                max_price,
+                limit=PRICE_SEARCH_LIMIT,
+            )
+        else:
+            result, meta = fetch_assembled_quotes_by_price(
+                min_price,
+                max_price,
+                include_monitor=monitor,
+                include_keyboard=keyboard,
+                include_setup=setup,
+                limit=PRICE_SEARCH_LIMIT,
+            )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e)) from e
     except RuntimeError as e:
