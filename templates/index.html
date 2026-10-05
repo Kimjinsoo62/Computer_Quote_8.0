@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI PC & Apple 견적 추출기 — 컴퓨존 견적 자동화 Ver 8.0</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/css/style.css?v=20260911i" />
+</head>
+<body>
+  <nav class="nav">
+    <div class="container nav-inner">
+      <div class="nav-brand">
+        <button type="button" id="btnCoupangSecret" class="coupang-secret-hit" aria-hidden="true" tabindex="-1" onclick="cpOpen(event)"></button>
+        <a href="/" class="logo">
+          <span class="logo-icon">⚡</span>
+          <span>컴퓨존 <strong>견적 자동화 Ver 8.0</strong></span>
+        </a>
+      </div>
+      <div class="nav-links">
+        <button type="button" id="btnOpenTaskReport" class="btn btn-outline btn-sm blink-warning" title="컴퓨터 출장/수리 작업내역서를 작성하고 인쇄/저장합니다">
+          <span id="taskReportBtnText" class="blink-warning-text">📋 작업내역서</span>
+        </button>
+        <button type="button" id="btnNetworkShare" class="btn btn-outline btn-sm" title="다른 컴퓨터에서 접속할 수 있는 네트워크 IP 주소를 확인하고 복사합니다">
+          🌐 <span id="networkIpText">네트워크 접속 ({{ lan_ip }})</span>
+        </button>
+        <button type="button" id="btnOpenCalc" class="btn btn-outline btn-sm" title="견적 창 밖에 작은 계산기를 띄웁니다. 다른 모니터로도 옮길 수 있습니다">
+          🧮 계산기
+        </button>
+        <button type="button" id="btnUpdateApp" class="btn btn-outline btn-sm" title="최신 버전으로 프로그램을 업데이트합니다">
+          🔄 업데이트
+        </button>
+        <a href="/manual" class="btn btn-outline btn-sm" title="프로그램 사용법을 봅니다">
+          📖 사용설명서
+        </a>
+        <button type="button" id="btnShutdownNav" class="btn btn-shutdown btn-sm" title="백엔드 종료 · 포트 정리 · 캐시 삭제 · 브라우저 닫기">
+          ✕ 종료
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <header class="hero">
+    <div class="hero-bg"></div>
+    <div class="container hero-topbar">
+      <div class="hero-topbar-left">
+        <p class="hero-date">견적 기준일: <strong id="quoteDate">{{ today }}</strong></p>
+        <div class="hero-topbar-actions">
+          <a id="btnDownloadExcel" class="btn btn-outline btn-sm" href="/api/download/excel">
+            <span class="btn-icon">📥</span> Excel 다운로드
+          </a>
+          <button id="btnQuoteInfo" class="btn btn-outline btn-sm blink-warning" title="견적처·공급자 정보를 관리합니다">
+            <span class="btn-icon">📇</span> <span id="quoteInfoBtnText" class="blink-warning-text">견적 정보</span>
+          </button>
+          <button type="button" id="btnMarginCycle" class="btn btn-outline btn-sm margin-cycle" aria-label="컴퓨존 견적 마진">
+            <span class="btn-icon">💳</span>
+            <span id="marginCycleLabel">C</span>
+          </button>
+        </div>
+      </div>
+      <div class="hero-topbar-right">
+        <button type="button" id="btnMonitorToggle" class="btn btn-outline btn-sm extra-toggle extra-off" data-extra="monitor" title="견적에서 모니터 포함/제외를 전환합니다">
+          <span class="btn-icon">🖥️</span>
+          <span id="monitorToggleLabel">모니터 (제외됨)</span>
+        </button>
+        <button type="button" id="btnKeyboardToggle" class="btn btn-outline btn-sm extra-toggle extra-off" data-extra="keyboard" title="견적에서 무선키보드 포함/제외를 전환합니다">
+          <span class="btn-icon">⌨️</span>
+          <span id="keyboardToggleLabel">무선키보드 (제외됨)</span>
+        </button>
+        <button type="button" id="btnRam32Toggle" class="btn btn-outline btn-sm extra-toggle extra-off" data-extra="ram32" title="AI PC 메모리를 32GB(×2)로 확장합니다. 기본은 컴퓨존 구성(×1)과 동일합니다">
+          <span class="btn-icon">🧠</span>
+          <span id="ram32ToggleLabel">메모리32GB로 추가 (제외됨)</span>
+        </button>
+        <button type="button" id="btnSetupToggle" class="btn btn-outline btn-sm extra-toggle extra-off" data-extra="setup" title="견적에서 초기 세팅비 포함/제외를 전환합니다">
+          <span class="btn-icon">🛠️</span>
+          <span id="setupToggleLabel">초기 세팅비 (제외됨)</span>
+        </button>
+        <button type="button" id="btnUnitPriceToggle" class="btn btn-outline btn-sm extra-toggle extra-on" data-extra="unitprice" title="견적서에 품목별 단가·금액을 표시할지 전환합니다">
+          <span class="btn-icon">💰</span>
+          <span id="unitPriceToggleLabel">단가표시</span>
+        </button>
+      </div>
+    </div>
+    <div class="container hero-content">
+      <div class="store-switcher">
+        <button id="storeBtnCompuzone" class="store-tab active" data-store="compuzone">
+          ⚡ 컴퓨존 조립PC
+        </button>
+        <button id="storeBtnApple" class="store-tab" data-store="apple">
+          🍎 Apple Store (애플스토어)
+        </button>
+      </div>
+
+      <div id="compuzoneCatGroup" class="hero-actions cat-group">
+        <button id="btnFetchAll" class="btn btn-primary btn-lg cat-btn active" data-cat="ai">
+          <span class="btn-icon">📋</span> AI PC 견적
+        </button>
+        <button class="btn btn-primary btn-lg cat-btn" data-cat="premium">
+          <span class="btn-icon">💎</span> 프리미엄PC
+        </button>
+        <button class="btn btn-primary btn-lg cat-btn" data-cat="iworks">
+          <span class="btn-icon">🏆</span> 아이웍스PC
+        </button>
+        <button class="btn btn-primary btn-lg cat-btn" data-cat="recommend">
+          <span class="btn-icon">👍</span> 추천조립PC
+        </button>
+        <button id="btnGamePc" class="btn btn-primary btn-lg game-cat-btn" type="button">
+          <span class="btn-icon">🎮</span> 게임으로PC찾기
+        </button>
+        <button id="btnPriceSearch" class="btn btn-primary btn-lg price-cat-btn" type="button">
+          <span class="btn-icon">💵</span> 금액대로 찾기
+        </button>
+      </div>
+
+      <div id="appleCatGroup" class="hero-actions cat-group hidden">
+        <button class="btn btn-apple btn-lg apple-cat-btn" data-cat="apple_macbook">
+          <span class="btn-icon">💻</span> MacBook (맥북)
+        </button>
+        <button class="btn btn-apple btn-lg apple-cat-btn" data-cat="apple_imac">
+          <span class="btn-icon">🖥️</span> iMac (아이맥)
+        </button>
+        <button class="btn btn-apple btn-lg apple-cat-btn" data-cat="apple_macmini">
+          <span class="btn-icon">📦</span> Mac mini (맥미니)
+        </button>
+        <button class="btn btn-apple btn-lg apple-cat-btn" data-cat="apple_macstudio">
+          <span class="btn-icon">🚀</span> Mac Studio (맥스튜디오)
+        </button>
+        <button class="btn btn-apple btn-lg apple-cat-btn" data-cat="apple_ipad_iphone">
+          <span class="btn-icon">📱</span> iPad & iPhone
+        </button>
+        <button class="btn btn-apple btn-lg apple-cat-btn" data-cat="apple_accessories">
+          <span class="btn-icon">🎧</span> 주변기기 & Care+
+        </button>
+        <button class="btn btn-apple btn-lg apple-cat-btn" data-cat="apple_all">
+          <span class="btn-icon">🌟</span> Apple 전제품 통합
+        </button>
+        <button id="btnAppleRefresh" class="btn btn-outline-danger btn-lg" title="애플 공식 홈페이지 실시간 크롤링 및 이전 데이터 완전 초기화" style="border-color: #ff4d4f; color: #ff7875;">
+          <span class="btn-icon">🔄</span> 공홈 실시간 새로고침
+        </button>
+      </div>
+
+    </div>
+  </header>
+
+
+  <section id="quote" class="section quote-section">
+    <div class="container">
+      <div id="loading" class="loading hidden">
+        <div class="spinner"></div>
+        <p>컴퓨존에서 실시간 견적 수집 중…</p>
+      </div>
+
+      <div id="error" class="error-box hidden"></div>
+
+      <div id="priceSearchBar" class="price-search-inline hidden">
+        <div class="price-search-form">
+          <label class="modal-field">
+            <span>최저가</span>
+            <div class="manwon-field">
+              <input type="text" id="priceSearchMin" inputmode="numeric" placeholder="예: 50" autocomplete="off" />
+              <span class="manwon-unit">만원</span>
+            </div>
+            <small id="priceSearchMinWon" class="manwon-preview"></small>
+          </label>
+          <span class="price-search-tilde">~</span>
+          <label class="modal-field">
+            <span>최고가</span>
+            <div class="manwon-field">
+              <input type="text" id="priceSearchMax" inputmode="numeric" placeholder="예: 70" autocomplete="off" />
+              <span class="manwon-unit">만원</span>
+            </div>
+            <small id="priceSearchMaxWon" class="manwon-preview"></small>
+          </label>
+          <button type="button" class="btn btn-primary" id="priceSearchSubmit">검색</button>
+        </div>
+        <p class="price-search-hint">만원 단위로 입력합니다. <strong>50 ~ 70</strong>이면 50만 원 ~ 70만 원입니다. 추천조립 · 아이웍스 · 프리미엄 전체를 판매가 기준으로 검색합니다.</p>
+        <p id="priceSearchStatus" class="modal-status"></p>
+      </div>
+
+      <div id="resultViewBar" class="price-search-toolbar hidden">
+        <span id="resultViewMeta"></span>
+        <button type="button" class="btn btn-outline btn-sm" id="btnResultViewToggle">리스트로보기</button>
+      </div>
+      <div id="summaryCards" class="summary-cards hidden"></div>
+      <div id="resultListWrap" class="price-result-list-wrap hidden">
+        <table class="price-result-table">
+          <thead>
+            <tr>
+              <th>구분</th>
+              <th>모델명</th>
+              <th>CPU</th>
+              <th>그래픽</th>
+              <th>금액</th>
+            </tr>
+          </thead>
+          <tbody id="resultListBody"></tbody>
+        </table>
+      </div>
+
+      <div id="quoteTabs" class="quote-tabs hidden">
+        <div class="tab-bar" id="tabBar"></div>
+        <div id="quotePanels"></div>
+      </div>
+
+      <div id="emptyState" class="empty-state">
+        <div class="empty-icon">🖥️</div>
+        <h3>아직 견적이 없습니다</h3>
+        <p>상단 <strong>AI PC · 프리미엄PC · 아이웍스PC · 추천조립PC · 게임으로PC찾기 · 금액대로 찾기</strong> 버튼을 눌러<br />컴퓨존 실시간 견적을 불러오세요.</p>
+      </div>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <div class="container footer-inner">
+      <div class="coupang-notice" style="margin-bottom: 8px; padding: 6px 10px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3); border-radius: 6px; text-align: center; color: #f8f9fa; font-weight: 700; font-size: 1rem; word-break: keep-all;">
+        📢 "이 사이트는 쿠팡 파트너스 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받습니다."
+      </div>
+      <div class="footer-contact">
+        <p><span class="footer-label">이메일</span> <a href="mailto:jskimjskim@gmail.com">jskimjskim@gmail.com</a></p>
+        <p><span class="footer-label">개발자</span> 애플아저씨</p>
+      </div>
+      <p>데이터 출처: <a href="https://m.compuzone.co.kr/s_event/event_detail.htm?EventNo=60921" target="_blank" rel="noopener">컴퓨존 AI 데스크탑 기획전</a></p>
+      <p class="footer-note">가격은 실시간 수집되며 프로모션에 따라 변동될 수 있습니다. {{ quote_disclaimer }}</p>
+    </div>
+  </footer>
+
+  <!-- 쿠팡 파트너스 API 설정 모달 -->
+  <div id="coupangModal" class="modal-overlay hidden" aria-hidden="true">
+    <div class="modal modal-lg" role="dialog" aria-labelledby="coupangTitle">
+      <div class="modal-header">
+        <h3 id="coupangTitle">🛒 쿠팡 파트너스 연결</h3>
+        <button type="button" class="modal-close btn-modal-close" id="coupangClose" aria-label="닫기">✕ 닫기</button>
+      </div>
+      <div class="modal-body">
+        <div class="coupang-setup-guide">
+          <p><strong>안내:</strong> 쿠팡은 보안상 <em>로그인만으로 API 키가 자동 연결되지 않습니다.</em> 아래 3단계만 따라 하시면 됩니다.</p>
+          <ol class="coupang-steps">
+            <li>
+              <button type="button" class="btn btn-sm btn-coupang" id="coupangOpenPartners">① 파트너스 사이트 열기 ↗</button>
+              <span>로그인 후 <strong>도구 → API 키 관리</strong>로 이동</span>
+            </li>
+            <li>Access Key · Secret Key 복사</li>
+            <li>아래 입력란에 붙여넣기 → <strong>연결 테스트</strong> → <strong>저장</strong></li>
+          </ol>
+        </div>
+        <fieldset class="modal-group">
+          <legend>API 키</legend>
+          <label class="modal-field">
+            <span>Access Key</span>
+            <input type="text" id="cpAccessKey" autocomplete="off" placeholder="AK..." />
+          </label>
+          <label class="modal-field">
+            <span>Secret Key</span>
+            <input type="password" id="cpSecretKey" autocomplete="off" placeholder="Secret Key" />
+          </label>
+          <label class="modal-field">
+            <span>subId (선택, 클릭 추적용)</span>
+            <input type="text" id="cpSubId" autocomplete="off" placeholder="pc-quote" />
+          </label>
+        </fieldset>
+        <p id="coupangStatus" class="modal-status"></p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline" id="coupangReset">🗑 설정 삭제</button>
+        <div class="modal-footer-right">
+          <button type="button" class="btn btn-outline" id="coupangCancel">닫기</button>
+          <button type="button" class="btn btn-outline" id="coupangTest">🔌 연결 테스트</button>
+          <button type="button" class="btn btn-primary" id="coupangSave">💾 저장</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 견적처/공급자 정보 관리 모달 -->
+  <div id="quoteInfoModal" class="modal-overlay hidden" aria-hidden="true">
+    <div class="modal modal-lg" role="dialog" aria-labelledby="quoteInfoTitle">
+      <div class="modal-header">
+        <h3 id="quoteInfoTitle">📇 견적 정보 관리</h3>
+        <button type="button" class="modal-close btn-modal-close" id="quoteInfoClose" aria-label="닫기">✕ 닫기</button>
+      </div>
+      <div class="modal-body">
+        <div id="qiWarningNotice" class="qi-warning-banner">
+          ⚠️ 견적처 또는 공급자에 기본 가짜 데이터(대한민국주식회사 등)가 입력되어 있습니다. 실제 정보로 변경 후 저장해 주세요.
+        </div>
+        <div class="modal-columns">
+          <fieldset class="modal-group">
+            <legend>견적처</legend>
+            <label>견적처 (상호명)
+              <input type="text" id="qiCustomerName" placeholder="예: 대한민국주식회사" />
+            </label>
+            <label>대표/담당자
+              <input type="text" id="qiCustomerManager" placeholder="예: 홍길동대표" />
+            </label>
+            <label>주소
+              <input type="text" id="qiCustomerAddress" placeholder="예: 서울시" />
+            </label>
+            <label>연락처
+              <input type="text" id="qiCustomerPhone" placeholder="예: 010-1234-5678" />
+            </label>
+            <label>이메일
+              <input type="email" id="qiCustomerEmail" placeholder="예: email1234@gmail.com" autocomplete="off" />
+            </label>
+            <label>견적일
+              <input type="date" id="qiQuoteDate" />
+              <small>비워두면 다운로드 당일 날짜가 사용됩니다</small>
+            </label>
+          </fieldset>
+          <fieldset class="modal-group">
+            <legend>공급자</legend>
+            <label>공급자 (상호명)
+              <input type="text" id="qiSupplierName" placeholder="예: 대한민국주식회사" />
+            </label>
+            <label>대표/담당자
+              <input type="text" id="qiSupplierManager" placeholder="예: 홍길동대표" />
+            </label>
+            <label>주소
+              <input type="text" id="qiSupplierAddress" placeholder="예: 서울시" />
+            </label>
+            <label>연락처
+              <input type="text" id="qiSupplierPhone" placeholder="예: 010-1234-5678" />
+            </label>
+            <label>이메일
+              <input type="email" id="qiSupplierEmail" placeholder="예: email1234@gmail.com" autocomplete="off" />
+            </label>
+          </fieldset>
+        </div>
+        <fieldset class="modal-group extra-price-group">
+          <legend>추가 품목 금액</legend>
+          <div class="extra-price-grid">
+            <label>모니터 금액
+              <input type="number" id="qiMonitorPrice" min="0" step="10000" placeholder="예: 180000" />
+            </label>
+            <label>키보드마우스 금액
+              <input type="number" id="qiKeyboardPrice" min="0" step="10000" placeholder="예: 30000" />
+            </label>
+            <label>초기 세팅비 금액
+              <input type="number" id="qiSetupPrice" min="0" step="10000" placeholder="예: 0" />
+            </label>
+          </div>
+          <small>포함으로 켠 항목에만 적용됩니다. 0원이면 별도청구로 표시됩니다.</small>
+        </fieldset>
+        <p id="quoteInfoStatus" class="modal-status"></p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline" id="quoteInfoReset">🗑 삭제(초기화)</button>
+        <div class="modal-footer-right">
+          <button type="button" class="btn btn-outline" id="quoteInfoCancel">닫기</button>
+          <button type="button" class="btn btn-primary" id="quoteInfoSave">💾 저장</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 게임으로 PC 찾기 모달 -->
+  <div id="gamePcModal" class="modal-overlay hidden" aria-hidden="true">
+    <div class="modal modal-lg" role="dialog" aria-labelledby="gamePcTitle">
+      <div class="modal-header">
+        <h3 id="gamePcTitle">🎮 게임으로 PC 찾기</h3>
+        <button type="button" class="modal-close btn-modal-close" id="gamePcClose" aria-label="닫기">✕ 닫기</button>
+      </div>
+      <div class="modal-body">
+        <p class="game-pc-lead">컴퓨존 <strong>조립PC → 내 게임PC 찾기</strong>와 동일하게, 게임과 해상도를 고르면 추천 PC 견적을 만듭니다.</p>
+        <div class="game-pc-steps">
+          <button type="button" class="game-step-tab active" data-step="1">STEP 1 · 게임 선택</button>
+          <button type="button" class="game-step-tab" data-step="2">STEP 2 · 해상도 선택</button>
+        </div>
+        <div id="gameStep1" class="game-step-panel">
+          <p class="game-step-hint">원하는 게임을 선택하세요 (최대 4개)</p>
+          <div id="gameSelectedChips" class="game-selected-chips"></div>
+          <div id="gameGrid" class="game-grid"></div>
+        </div>
+        <div id="gameStep2" class="game-step-panel hidden">
+          <p class="game-step-hint">모니터 해상도를 선택하세요</p>
+          <div id="resolutionGrid" class="resolution-grid"></div>
+        </div>
+        <p id="gamePcStatus" class="modal-status"></p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline" id="gamePcPrev">← 이전</button>
+        <div class="modal-footer-right">
+          <button type="button" class="btn btn-outline" id="gamePcCancel">닫기</button>
+          <button type="button" class="btn btn-primary" id="gamePcNext">다음 · 해상도 선택 →</button>
+          <button type="button" class="btn btn-primary hidden" id="gamePcSubmit">나에게 딱맞는 PC보기</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 네트워크 공유 접속 안내 모달 -->
+  <div id="networkModal" class="modal-overlay hidden" aria-hidden="true">
+    <div class="modal" role="dialog" aria-labelledby="networkModalTitle" style="max-width: 580px;">
+      <div class="modal-header">
+        <h3 id="networkModalTitle">🌐 로컬 및 네트워크 접속 안내</h3>
+        <button type="button" class="modal-close btn-modal-close" id="networkModalClose" aria-label="닫기">✕ 닫기</button>
+      </div>
+      <div class="modal-body">
+        <p style="margin-top: 0; color: var(--muted); font-size: 0.9rem;">
+          이 컴퓨터(호스트)는 물론, 동일한 공유기(Wi-Fi 또는 유선 LAN)에 연결된 다른 컴퓨터나 노트북, 스마트폰에서도 아래 주소를 통해 실시간으로 접속하여 함께 작업할 수 있습니다.
+        </p>
+
+        <div class="net-share-card">
+          <div class="net-share-title" style="color: #38bdf8;">
+            💻 다른 컴퓨터에서 접속할 때 (네트워크 IP)
+          </div>
+          <div class="net-share-row">
+            <input type="text" id="netIpInput" value="http://{{ lan_ip }}:8090/" readonly />
+            <button type="button" class="btn btn-primary btn-sm" id="btnCopyNetUrl">📋 복사</button>
+          </div>
+          <small style="color: var(--muted); display: block; margin-top: 4px;">
+            다른 PC 브라우저 주소창에 위 주소를 입력하면 즉시 접속됩니다.
+          </small>
+        </div>
+
+        <div class="net-share-card">
+          <div class="net-share-title" style="color: #4ade80;">
+            🖥️ 현재 컴퓨터에서 접속할 때 (로컬)
+          </div>
+          <div class="net-share-row">
+            <input type="text" id="localIpInput" value="http://127.0.0.1:8090/" readonly />
+            <button type="button" class="btn btn-outline btn-sm" id="btnCopyLocalUrl">📋 복사</button>
+          </div>
+        </div>
+
+        <div class="net-share-tips">
+          <strong>💡 네트워크 협업 팁:</strong>
+          <ul>
+            <li>어느 컴퓨터에서 견적이나 작업내역서를 저장하든 이 컴퓨터(호스트)에 자동 통합 저장됩니다.</li>
+            <li>다른 컴퓨터에서 페이지가 열리지 않는 경우: Windows 방화벽에서 포트 8090 또는 Python 허용 여부를 확인하세요.</li>
+          </ul>
+        </div>
+      </div>
+      <div class="modal-footer" style="justify-content: flex-end;">
+        <button type="button" class="btn btn-primary" id="networkModalOk">확인</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Apple CTO 구성 변경 모달 -->
+  <div id="ctoModal" class="modal-overlay hidden" aria-hidden="true">
+    <div class="modal modal-lg" role="dialog" aria-labelledby="ctoTitle">
+      <div class="modal-header">
+        <h3 id="ctoTitle">🍎 Apple CTO (Configure To Order) 사양 맞춤 구성</h3>
+        <button type="button" class="modal-close btn-modal-close" id="ctoClose" aria-label="닫기">✕ 닫기</button>
+      </div>
+      <div class="modal-body">
+        <div id="ctoModelInfo" class="cto-model-info"></div>
+        <div id="ctoFormContainer" class="cto-form-container"></div>
+        <div class="cto-price-summary">
+          <p>맞춤 구성 총 금액: <strong id="ctoTotalPrice" class="cto-total-price">0원</strong></p>
+          <p class="cto-live-note">※ 공식몰 구매 페이지에 공개된 구성 가격만 표시합니다. Mac 메모리·SSD 2단계 가격은 이 페이지에 없어 제외됩니다.</p>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline" id="ctoResetBtn">🔄 기본 사양 복원</button>
+        <div class="modal-footer-right">
+          <button type="button" class="btn btn-outline" id="ctoCancelBtn">취소</button>
+          <button type="button" class="btn btn-apple" id="ctoApplyBtn">💾 CTO 구성 적용</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+
+
+  <!-- 컴퓨터 작업내역서 모달 -->
+  <div id="taskReportModal" class="modal-overlay hidden" aria-hidden="true">
+    <div class="modal modal-xl task-report-modal" role="dialog" aria-labelledby="trModalTitle">
+      <div class="modal-header no-print">
+        <div class="tr-modal-header-left">
+          <h3 id="trModalTitle">📋 컴퓨터 작업 내역서</h3>
+          <div class="tr-tab-buttons">
+            <button type="button" id="trTabFormBtn" class="btn btn-sm btn-primary active">📝 내역서 작성 / 수정</button>
+            <button type="button" id="trTabListBtn" class="btn btn-sm btn-outline">📂 저장된 내역 목록 (<span id="trListCount">0</span>)</button>
+          </div>
+        </div>
+        <button type="button" class="modal-close btn-modal-close" id="trModalClose" aria-label="닫기">✕ 닫기</button>
+      </div>
+
+      <div class="modal-body tr-modal-body">
+        <!-- 1. 작성 패널 -->
+        <div id="trFormPanel" class="tr-panel">
+          <div class="tr-toolbar no-print">
+            <div class="tr-toolbar-left">
+              <button type="button" id="trBtnNew" class="btn btn-outline btn-sm">➕ 새로 작성</button>
+              <span id="trCurrentStatusBadge" class="badge-status">신규 작성중</span>
+            </div>
+            <div class="tr-toolbar-right">
+              <button type="button" id="trBtnSave" class="btn btn-primary btn-sm">💾 저장하기</button>
+              <button type="button" id="trBtnPrint" class="btn btn-accent btn-sm">🖨️ 종이 인쇄 / PDF 출력</button>
+              <button type="button" id="trBtnExcel" class="btn btn-outline btn-sm">📥 Excel 다운로드</button>
+            </div>
+          </div>
+
+          <!-- 실제 인쇄/작성되는 작업내역서 페이퍼 영역 -->
+          <div id="trCompanyWarningNotice" class="tr-company-warning-notice no-print">
+            ⚠️ 작업내역서의 업체 정보가 기본 가짜 데이터(대한민국주식회사 등) 상태입니다. [견적 정보] 메뉴에서 공급자 정보를 변경하거나 직접 수정한 후 저장하세요.
+          </div>
+          <div class="tr-paper" id="trPrintPaper">
+            <!-- 상단 헤더 -->
+            <div class="tr-paper-header">
+              <div class="tr-brand-info" id="trBrandInfoBox">
+                <input type="text" id="trCompanyName" class="tr-inp-brand" value="대한민국주식회사" placeholder="상호명" />
+                <span class="tr-brand-sub">컴퓨터 판매·수리센터</span>
+                <div class="tr-contact-meta">
+                  <div class="tr-meta-row">
+                    <span class="tr-meta-lbl">주소 :</span>
+                    <input type="text" id="trCompanyAddress" class="tr-inp-meta" value="서울시" placeholder="업체 주소" />
+                  </div>
+                  <div class="tr-meta-row">
+                    <span class="tr-meta-lbl">전화 :</span>
+                    <input type="text" id="trCompanyPhone" class="tr-inp-meta tr-inp-phone" value="010-1234-5678" placeholder="업체 전화번호" />
+                    <span class="tr-meta-lbl">사업자번호 :</span>
+                    <input type="text" id="trBusinessNumber" class="tr-inp-meta tr-inp-biz" value="121-18-24250" />
+                  </div>
+                </div>
+              </div>
+              <div class="tr-doc-box">
+                <div class="tr-doc-title">작업 내역서</div>
+                <div class="tr-doc-meta-grid">
+                  <div class="tr-doc-meta-lbl">접수번호 :</div>
+                  <div><input type="text" id="trDocNo" class="tr-inp-doc" placeholder="자동 생성 (예: TR-20260824-01)" /></div>
+                  <div class="tr-doc-meta-lbl">접수일자 :</div>
+                  <div><input type="date" id="trReceiptDate" class="tr-inp-doc" /></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 1. 고객 정보 -->
+            <div class="tr-sec">
+              <div class="tr-sec-title">1. 고객 정보</div>
+              <table class="tr-table">
+                <tr>
+                  <th style="width: 15%;">고객명</th>
+                  <td style="width: 35%;"><input type="text" id="trCustName" class="tr-inp" placeholder="성명 / 회사명" /></td>
+                  <th style="width: 15%;">연락처</th>
+                  <td style="width: 35%;"><input type="text" id="trCustPhone" class="tr-inp" placeholder="010-0000-0000" /></td>
+                </tr>
+                <tr>
+                  <th>주소</th>
+                  <td colspan="3"><input type="text" id="trCustAddress" class="tr-inp" placeholder="방문/출장지 주소" /></td>
+                </tr>
+                <tr>
+                  <th>이메일</th>
+                  <td><input type="email" id="trCustEmail" class="tr-inp" placeholder="example@email.com" /></td>
+                  <th>선호 연락 방식</th>
+                  <td>
+                    <div class="tr-radio-group">
+                      <label><input type="radio" name="trContactMethod" value="전화" checked /> 전화</label>
+                      <label><input type="radio" name="trContactMethod" value="문자" /> 문자</label>
+                      <label><input type="radio" name="trContactMethod" value="이메일" /> 이메일</label>
+                    </div>
+                  </td>
+                </tr>
+              </table>
+            </div>
+
+            <!-- 2. 장비 정보 -->
+            <div class="tr-sec">
+              <div class="tr-sec-title">2. 장비 정보</div>
+              <table class="tr-table">
+                <tr>
+                  <th style="width: 15%;">장비 종류</th>
+                  <td style="width: 35%;">
+                    <div class="tr-radio-group">
+                      <label><input type="radio" name="trDeviceType" value="데스크탑" checked /> 데스크탑</label>
+                      <label><input type="radio" name="trDeviceType" value="노트북" /> 노트북</label>
+                      <label><input type="radio" name="trDeviceType" value="서버" /> 서버</label>
+                      <label><input type="radio" name="trDeviceType" value="기타" /> 기타</label>
+                    </div>
+                  </td>
+                  <th style="width: 15%;">제조사/모델명</th>
+                  <td style="width: 35%;"><input type="text" id="trDeviceModel" class="tr-inp" placeholder="예: 삼성 갤럭시북 / 조립PC" /></td>
+                </tr>
+                <tr>
+                  <th>일련 번호</th>
+                  <td><input type="text" id="trSerialNumber" class="tr-inp" placeholder="S/N" /></td>
+                  <th>구입일자</th>
+                  <td><input type="date" id="trPurchaseDate" class="tr-inp" /></td>
+                </tr>
+                <tr>
+                  <th>부품 인수</th>
+                  <td colspan="3">
+                    <div class="tr-check-group">
+                      <label><input type="checkbox" class="tr-acc-check" value="충전기" /> 충전기</label>
+                      <label><input type="checkbox" class="tr-acc-check" value="마우스" /> 마우스</label>
+                      <label><input type="checkbox" class="tr-acc-check" value="케이블" /> 케이블</label>
+                      <label><input type="checkbox" class="tr-acc-check" value="가방" /> 가방</label>
+                      <span class="tr-acc-other-wrap">기타 : <input type="text" id="trAccCustom" class="tr-inp-inline" placeholder="기타 구성품 입력" /></span>
+                    </div>
+                  </td>
+                </tr>
+              </table>
+            </div>
+
+            <!-- 3. 증상 / 요청 사항 -->
+            <div class="tr-sec">
+              <div class="tr-sec-title">3. 증상 / 요청 사항</div>
+              <div class="tr-box-content">
+                <textarea id="trSymptoms" class="tr-textarea" rows="3" placeholder="고객 불편 증상 및 출장 요청 사항을 기재하세요 (예: 전원 불량, 윈도우 부팅 불가, 서멀 재도포 및 내부 청소 요청 등)"></textarea>
+              </div>
+            </div>
+
+            <!-- 4. 진단 및 작업 내역 -->
+            <div class="tr-sec">
+              <div class="tr-sec-title-row">
+                <div class="tr-sec-title">4. 진단 및 작업 내역</div>
+                <button type="button" id="trBtnAddTaskRow" class="btn btn-xs btn-outline no-print">＋ 작업 행 추가</button>
+              </div>
+              <table class="tr-table" id="trTasksTable">
+                <thead>
+                  <tr>
+                    <th style="width: 8%;">번호</th>
+                    <th style="width: 47%;">작업 내용</th>
+                    <th style="width: 25%;">부품 / 자재</th>
+                    <th style="width: 20%;">비용 (원)</th>
+                  </tr>
+                </thead>
+                <tbody id="trTasksTbody">
+                  <!-- 동적 행 생성 -->
+                </tbody>
+                <tfoot>
+                  <tr class="tr-total-row">
+                    <th colspan="3" style="text-align: center;">합계 금액 (부가세 포함)</th>
+                    <td style="text-align: right; font-weight: bold;">
+                      <span id="trTotalCostDisplay" class="tr-total-cost">0</span> 원
+                    </td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+
+            <!-- 5. 처리 현황 -->
+            <div class="tr-sec">
+              <div class="tr-sec-title">5. 처리 현황</div>
+              <table class="tr-table">
+                <tr>
+                  <th style="width: 15%;">처리 상태</th>
+                  <td style="width: 35%;">
+                    <div class="tr-radio-group">
+                      <label><input type="radio" name="trStatus" value="접수" /> 접수</label>
+                      <label><input type="radio" name="trStatus" value="진단중" /> 진단중</label>
+                      <label><input type="radio" name="trStatus" value="수리중" /> 수리중</label>
+                      <label><input type="radio" name="trStatus" value="완료" checked /> 완료</label>
+                      <label><input type="radio" name="trStatus" value="인도완료" /> 인도완료</label>
+                    </div>
+                  </td>
+                  <th style="width: 15%;">예상/완료일</th>
+                  <td style="width: 35%;"><input type="date" id="trExpectedDate" class="tr-inp" /></td>
+                </tr>
+                <tr>
+                  <th>담당 기술자</th>
+                  <td><input type="text" id="trTechnician" class="tr-inp" value="김대건" placeholder="담당 기사명" /></td>
+                  <th>보증 기간</th>
+                  <td><input type="text" id="trWarrantyPeriod" class="tr-inp" value="3개월" placeholder="예: 1개월 / 3개월 / 무상 1년" /></td>
+                </tr>
+              </table>
+            </div>
+
+            <!-- 6. 확인 및 서명 -->
+            <div class="tr-sec">
+              <div class="tr-sec-title">6. 확인 및 서명</div>
+              <div class="tr-sign-grid">
+                <div class="tr-sign-card">
+                  <div class="tr-sign-header">
+                    <span>고객 서명 (또는 인)</span>
+                    <button type="button" class="btn-clear-sign no-print" onclick="clearSignCanvas('cust')">지우기</button>
+                  </div>
+                  <canvas id="trSignCanvasCust" class="tr-sign-canvas" width="280" height="90"></canvas>
+                  <input type="text" id="trSignTextCust" class="tr-inp-sign-text" placeholder="서명 입력 또는 위 캔버스 서명" />
+                </div>
+                <div class="tr-sign-card">
+                  <div class="tr-sign-header">
+                    <span>담당자 서명 (또는 인)</span>
+                    <button type="button" class="btn-clear-sign no-print" onclick="clearSignCanvas('tech')">지우기</button>
+                  </div>
+                  <canvas id="trSignCanvasTech" class="tr-sign-canvas" width="280" height="90"></canvas>
+                  <input type="text" id="trSignTextTech" class="tr-inp-sign-text" placeholder="담당자 서명 입력" />
+                </div>
+              </div>
+            </div>
+
+            <!-- 유의사항 -->
+            <div class="tr-notices">
+              <div class="tr-notice-title">유의사항</div>
+              <ol class="tr-notice-list">
+                <li>접수 후 최대 30일 까지 물품은 보관처리 하며, 이후 제품은 관련 법령에 따라 처리될 수 있습니다.</li>
+                <li>진단 결과에 따라 최종 수리 비용은 변경될 수 있으며, 사전 안내 후 진행합니다.</li>
+                <li>데이터 백업은 고객 책임이며, 당사는 저장 데이터의 손실에 대해 책임지지 않습니다.</li>
+              </ol>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. 목록 패널 -->
+        <div id="trListPanel" class="tr-panel hidden">
+          <div class="tr-list-toolbar">
+            <div class="tr-list-search">
+              <input type="text" id="trSearchInput" class="tr-inp" placeholder="고객명, 연락처, 접수번호 검색..." />
+            </div>
+            <button type="button" id="trBtnRefreshList" class="btn btn-outline btn-sm">🔄 새로고침</button>
+          </div>
+          <div class="tr-list-table-wrap">
+            <table class="tr-list-table">
+              <thead>
+                <tr>
+                  <th>접수일자</th>
+                  <th>접수번호</th>
+                  <th>고객명</th>
+                  <th>연락처</th>
+                  <th>장비/모델</th>
+                  <th>처리상태</th>
+                  <th>총 비용</th>
+                  <th style="width: 220px;">관리</th>
+                </tr>
+              </thead>
+              <tbody id="trListTbody">
+                <!-- 동적 목록 -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="/static/js/app.js?v=20260911j"></script>
+</body>
+</html>

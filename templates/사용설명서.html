@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>사용설명서 — 컴퓨존 견적 자동화 Ver 8.0</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/css/style.css?v=20260910r" />
+  <style>
+    .manual-wrap { max-width: 1120px; margin: 0 auto; padding: 48px 16px 40px; }
+    .manual-head { border-bottom: 1px solid var(--border); padding-bottom: 24px; margin-bottom: 28px; }
+    .manual-head h1 { font-size: 1.65rem; font-weight: 800; margin-bottom: 10px; display: flex; align-items: center; gap: 10px; }
+    .manual-head p { color: var(--muted); font-size: 0.95rem; line-height: 1.6; }
+
+    .manual-toc {
+      background: rgba(255,255,255,0.03); border: 1px solid var(--border);
+      border-radius: 12px; padding: 20px 24px; margin-bottom: 40px;
+    }
+    .manual-toc h2 { font-size: 1.05rem; margin-bottom: 14px; color: var(--accent); }
+    .manual-toc ol { margin: 0; padding-left: 20px; columns: 2; column-gap: 36px; }
+    .manual-toc li { margin-bottom: 7px; font-size: 0.92rem; break-inside: avoid; }
+    .manual-toc a { color: var(--text); text-decoration: none; transition: color 0.15s ease; }
+    .manual-toc a:hover { color: var(--accent); text-decoration: underline; }
+
+    .manual-sec { margin-bottom: 34px; scroll-margin-top: 48px; }
+    .manual-sec h2 {
+      font-size: 1.2rem; font-weight: 700; margin-bottom: 14px;
+      padding-left: 12px; border-left: 4px solid var(--primary);
+      display: flex; align-items: center; gap: 8px;
+    }
+    .manual-sec h3 { font-size: 1.02rem; font-weight: 700; margin: 22px 0 10px; color: #cbd5e1; }
+    .manual-sec p { color: #b9c5d6; line-height: 1.75; margin-bottom: 12px; font-size: 0.93rem; }
+    .manual-sec ul, .manual-sec ol { margin: 0 0 14px 20px; color: #b9c5d6; font-size: 0.93rem; line-height: 1.85; }
+    .manual-sec li { margin-bottom: 4px; }
+    .manual-sec strong { color: var(--text); }
+
+    .manual-table { width: 100%; border-collapse: collapse; margin: 14px 0 18px; font-size: 0.88rem; }
+    .manual-table th, .manual-table td {
+      border: 1px solid var(--border); padding: 9px 12px; text-align: left; vertical-align: top;
+    }
+    .manual-table th { background: rgba(59,130,246,0.12); color: var(--text); font-weight: 700; white-space: nowrap; }
+    .manual-table td { color: #b9c5d6; }
+    .manual-table code { font-size: 0.85em; background: rgba(0,0,0,0.3); padding: 2px 5px; border-radius: 4px; color: #93c5fd; }
+
+    .manual-note, .manual-warn, .manual-tip {
+      border-radius: 8px; padding: 13px 16px; margin: 14px 0; font-size: 0.9rem; line-height: 1.7;
+    }
+    .manual-note { background: rgba(59,130,246,0.1); border-left: 3px solid #3b82f6; color: #c7d9f5; }
+    .manual-note ul { margin: 8px 0 0 20px; padding: 0; }
+    .manual-note li { margin-bottom: 6px; }
+    .manual-warn { background: rgba(248,113,113,0.1); border-left: 3px solid #f87171; color: #fecaca; }
+    .manual-tip  { background: rgba(52,211,153,0.1); border-left: 3px solid #34d399; color: #b7f0dc; }
+
+    .manual-badge-red { background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.4); padding: 2px 7px; border-radius: 4px; font-weight: 700; font-size: 0.85em; }
+    .manual-badge-green { background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.4); padding: 2px 7px; border-radius: 4px; font-weight: 700; font-size: 0.85em; }
+    .manual-badge-blue { background: rgba(59, 130, 246, 0.2); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.4); padding: 2px 7px; border-radius: 4px; font-weight: 700; font-size: 0.85em; }
+
+    .manual-key {
+      display: inline-block; padding: 2px 8px; border-radius: 5px; font-size: 0.85em; font-weight: 600;
+      background: rgba(255,255,255,0.08); border: 1px solid var(--border); white-space: nowrap;
+    }
+    .manual-steps { counter-reset: mstep; list-style: none; margin-left: 0; padding-left: 0; }
+    .manual-steps > li {
+      counter-increment: mstep; position: relative; padding-left: 34px; margin-bottom: 12px;
+    }
+    .manual-steps > li::before {
+      content: counter(mstep); position: absolute; left: 0; top: 1px;
+      width: 22px; height: 22px; border-radius: 50%; background: var(--primary); color: #fff;
+      font-size: 0.75rem; font-weight: 700; display: flex; align-items: center; justify-content: center;
+    }
+    .manual-back { display: inline-flex; align-items: center; gap: 6px; }
+    .manual-footer {
+      border-top: 1px solid var(--border); margin-top: 48px; padding-top: 20px;
+      color: var(--muted); font-size: 0.85rem;
+    }
+    @media (max-width: 768px) {
+      .manual-toc ol { columns: 1; }
+      .manual-wrap { padding: 46px 12px 32px; }
+    }
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <div class="container nav-inner">
+      <div class="nav-brand">
+        <a href="/" class="logo">
+          <span class="logo-icon">⚡</span>
+          <span>컴퓨존 <strong>견적 자동화 Ver 8.0</strong></span>
+        </a>
+      </div>
+      <div class="nav-links">
+        <a href="/" class="btn btn-outline btn-sm manual-back">← 견적 화면으로</a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="manual-wrap">
+    <div class="manual-head">
+      <h1>📖 사용설명서</h1>
+      <p>컴퓨존(Compuzone) 조립PC 및 Apple Store 공식몰의 실시간 견적을 자동 수집하고, 단가 조절 · 부가세 계산 · 중고 시세 검색 · 네트워크 다중 접속 · 작업내역서 작성 · 8종 Excel 견적서 발행을 지원하는 통합 업무 솔루션입니다. <strong>Ver 8.0</strong></p>
+
+      <div class="manual-note">
+        <strong>🔥 Ver 8.0 주요 신규 및 개선 기능</strong>
+        <ul>
+          <li><strong>🌐 네트워크(LAN IP) 다중 기기 동시 작업 지원</strong>: 프로그램 실행 PC뿐 아니라 같은 네트워크(공유기) 내의 다른 컴퓨터, 노트북, 태블릿, 스마트폰에서도 <code>http://[서버IP]:8090</code> 주소로 접속해 동시에 견적 및 내역서 작성이 가능합니다. 상단 메뉴의 <span class="manual-badge-blue">🌐 네트워크 접속</span> 버튼을 누르면 IP 주소가 즉시 복사됩니다.</li>
+          <li><strong>🍎 Apple Store 공식몰 100% 실시간 동기화 & 구버전 데이터 완전 제거</strong>: 과거 하드코딩 모델 및 이전 캐시를 완전히 비우고, 현재 애플 공식 스토어에서 판매 중인 최신 라인업만 정확하게 수집·노출합니다. 상단의 <span class="manual-badge-red">🔄 공홈 실시간 새로고침</span> 버튼으로 언제든 캐시를 100% 비우고 실시간으로 다시 긁어올 수 있습니다.</li>
+          <li><strong>🔴 다크모드 시인성 강화 — 팝업 모달 내 선명한 빨간색 [닫기] 버튼 탑재</strong>: 어두운 배경에서 찾기 어렵던 우측 상단 <code>✕</code> 대신, <strong>견적 정보</strong> 및 <strong>작업내역서</strong> 모달 우측 상단에 눈에 바로 띄는 빨간색 <strong>[닫기]</strong> 버튼을 달아 직관성을 높였습니다.</li>
+          <li><strong>✨ 견적 정보 & 작업내역서 저장 시 깜빡임 자동 멈춤</strong>: 앱 시작 시 미입력 상태를 알리기 위해 깜빡이던 상단 버튼이, 정보를 한 번이라도 입력하고 저장하면 즉시 깜빡임을 멈추고 깔끔한 일반 버튼으로 전환됩니다.</li>
+          <li><strong>⚡ 번개장터 · 🟢 중고나라 원클릭 시세 검색</strong>: 각 견적 카드마다 중고 거래 버튼이 탑재되었습니다. 조립PC는 복잡한 모델명 대신 <strong>CPU + 그래픽카드</strong> 핵심 사양(예: <code>7800X3D RTX 4070 SUPER</code>)으로 자동 변환하여 가장 정확한 중고 시세를 찾아 줍니다.</li>
+        </ul>
+      </div>
+
+      <div class="manual-note">
+        <strong>Ver 7.1 ~ 6.0 핵심 기능 요약</strong>
+        <ul>
+          <li><strong>부품별 개별 단가 마진 분배</strong>: 소비자견적(30%)이나 기타 마진 적용 시 총액뿐만 아니라 모든 부품과 추가 옵션(모니터, 키보드, 세팅비 등)의 단가에도 비례 분배되어 단가 총합과 견적 합계가 완벽히 일치합니다.</li>
+          <li><strong>💰 단가표시 / 단가미표시 전환</strong>: 고객에게 부품별 단가를 숨기고 <strong>합계금액만</strong> 전달하고 싶을 때 상단 <strong>💰</strong> 버튼 하나로 즉시 전환할 수 있습니다.</li>
+          <li><strong>💳 마진 원클릭 순환 버튼</strong>: <code>C(30% 소비자)</code> → <code>25</code> → <code>20</code> → <code>15</code> → <code>10</code> → <code>0(원가)</code> 순으로 간편하게 순환 전환됩니다.</li>
+          <li><strong>🧮 독립 팝업 계산기</strong>: 브라우저 밖으로 자유롭게 끌어내어 다른 모니터에 둘 수 있는 부가세 역계산 지원 계산기를 제공합니다.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="manual-toc">
+      <h2>목차</h2>
+      <ol>
+        <li><a href="#s1">1. 프로그램 시작과 종료</a></li>
+        <li><a href="#s2">2. 네트워크(LAN) 접속 — 다른 PC · 태블릿에서 작업하기</a></li>
+        <li><a href="#s3">3. 전체 화면 구성</a></li>
+        <li><a href="#s4">4. 견적 불러오기 (컴퓨존 조립PC & Apple Store)</a></li>
+        <li><a href="#s5">5. 견적 옵션 (모니터 · 키보드 · 메모리 · 세팅비 · 단가표시 · 마진)</a></li>
+        <li><a href="#s6">6. 게임으로 PC 찾기</a></li>
+        <li><a href="#s7">7. 금액대로 찾기</a></li>
+        <li><a href="#s8">8. Apple Store 공식몰 실시간 동기화 & CTO 맞춤 구성</a></li>
+        <li><a href="#s9">9. 중고 시세 검색 (번개장터 · 중고나라 연동)</a></li>
+        <li><a href="#s10">10. 견적 정보 등록 (닫기 버튼 · 저장 후 깜빡임 중지)</a></li>
+        <li><a href="#s11">11. Excel 견적서 다운로드 (전체 및 카드별)</a></li>
+        <li><a href="#s12">12. Excel 견적서 구성과 인쇄 (8종 서식 완비)</a></li>
+        <li><a href="#s13">13. 컴퓨터 작업내역서 (출장/수리 작성 · 저장 · 인쇄 · 엑셀)</a></li>
+        <li><a href="#s14">14. 팝업 계산기 (부가세 역계산 · 메모 도구)</a></li>
+        <li><a href="#s15">15. 쿠팡 검색과 파트너스 연결</a></li>
+        <li><a href="#s16">16. 문제 해결 (FAQ)</a></li>
+      </ol>
+    </div>
+
+    <!-- 1 -->
+    <section class="manual-sec" id="s1">
+      <h2>1. 프로그램 시작과 종료</h2>
+
+      <h3>시작하기</h3>
+      <p>프로그램 폴더의 <span class="manual-key">run.bat</span> 을 더블클릭합니다. 검은 명령창이 뜨며 서버가 구동되고, 잠시 후 <strong>주소창 없는 전용 창(App 모드)</strong>으로 메인 화면이 자동 실행됩니다.</p>
+      <ul>
+        <li>검은 명령창은 <strong>백엔드 서버</strong>가 구동 중인 창입니다. 프로그램을 사용하는 동안에는 닫지 마세요.</li>
+        <li>실행 시 콘솔 창에 <code>Local: http://127.0.0.1:8090/</code> 및 <code>Network: Accessible via LAN IP:8090</code> 안내가 함께 출력됩니다.</li>
+        <li>전용 창은 독립 프로필로 실행되므로 개인 브라우저의 쿠키나 확장 프로그램과 충돌하지 않습니다.</li>
+        <li>PC에 처음 설치하는 환경이라면 <span class="manual-key">install.bat</span> 을 먼저 1회 실행하여 가상환경 및 패키지를 설치해 주세요.</li>
+      </ul>
+
+      <h3>종료하기</h3>
+      <table class="manual-table">
+        <tr><th>방법</th><th>동작 및 권장 상황</th></tr>
+        <tr>
+          <td>화면 우측 상단 <strong>✕ 종료</strong></td>
+          <td>서버 프로세스 종료 · 8090 포트 반환 · 임시 캐시 정리 · 앱 창 닫기를 일괄 수행합니다. <strong>가장 안전한 권장 방법</strong>입니다.</td>
+        </tr>
+        <tr>
+          <td><span class="manual-key">stop.bat</span></td>
+          <td>화면이 멈추거나 창이 닫힌 뒤에도 백그라운드 프로세스가 남아있을 때 실행하여 서버를 안전하게 종료합니다.</td>
+        </tr>
+        <tr>
+          <td><span class="manual-key">force_stop.bat</span></td>
+          <td>포트 점유가 풀리지 않거나 프로세스가 강제 정지되지 않을 때 관리자 권한으로 실행하는 비상용 배치 파일입니다.</td>
+        </tr>
+      </table>
+    </section>
+
+    <!-- 2 -->
+    <section class="manual-sec" id="s2">
+      <h2>2. 네트워크(LAN) 접속 — 다른 PC · 태블릿에서 작업하기</h2>
+      <p>본 프로그램은 <strong>0.0.0.0 바인딩</strong>을 지원하여, 프로그램을 실행한 메인 컴퓨터뿐만 아니라 <strong>같은 공유기(와이파이 또는 유선 LAN)</strong>에 연결된 사무실/매장의 모든 기기에서 동시 접속해 작업할 수 있습니다.</p>
+
+      <h3>접속 주소 확인 및 복사</h3>
+      <ol class="manual-steps">
+        <li>메인 프로그램 상단 메뉴 바를 보면 <span class="manual-badge-blue">🌐 네트워크 접속 (192.168.x.x)</span> 버튼이 있습니다. 괄호 안에 현재 실행 중인 PC의 공유기 내부 IP가 실시간으로 표시됩니다.</li>
+        <li>이 버튼을 클릭하면 접속용 전체 주소(예: <code>http://192.168.0.13:8090/</code>)가 <strong>클립보드에 자동으로 복사</strong>되고 화면에 복사 완료 알림이 뜹니다.</li>
+        <li>같은 사무실 내의 다른 직원 PC, 상담용 노트북, 카운터 태블릿(아이패드/갤럭시탭), 스마트폰의 웹 브라우저(Chrome, Edge, Safari 등)를 열고 복사한 주소를 입력합니다.</li>
+      </ol>
+
+      <div class="manual-tip">
+        <strong>동시 다중 작업 지원</strong>: 다른 기기에서도 실시간 견적 조회, 마진 및 옵션 조절, 엑셀 견적서 다운로드, 컴퓨터 작업내역서 작성 및 서버 저장을 메인 PC와 동일하게 완벽히 이용할 수 있습니다.
+      </div>
+      <div class="manual-note">
+        <strong>접속이 안 될 때 확인 사항</strong>:
+        <ul>
+          <li>다른 컴퓨터나 모바일 기기가 <strong>동일한 공유기(Wi-Fi 또는 유선 네트워크)</strong>에 연결되어 있는지 확인하세요. (외부 LTE/5G 접속 불가)</li>
+          <li>윈도우 방화벽 알림이 떴을 때 '액세스 허용'을 눌렀는지 확인하고, 연결이 안 된다면 윈도우 방화벽 인바운드 규칙에서 <strong>8090 포트(TCP)</strong>를 허용해 주세요.</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- 3 -->
+    <section class="manual-sec" id="s3">
+      <h2>3. 전체 화면 구성</h2>
+      <table class="manual-table">
+        <tr><th>영역</th><th>주요 기능 및 버튼 구성</th></tr>
+        <tr>
+          <td>맨 위 상단 네비게이션</td>
+          <td>
+            <strong>📋 작업내역서</strong> (출장/수리 작성) · 
+            <strong>🌐 네트워크 접속</strong> (LAN IP 확인 및 원클릭 주소 복사) · 
+            <strong>🧮 계산기</strong> (독립 팝업 부가세 계산기) · 
+            <strong>📖 사용설명서</strong> · 
+            <strong>✕ 종료</strong>
+          </td>
+        </tr>
+        <tr>
+          <td>견적 컨트롤 상단 바</td>
+          <td>
+            <strong>좌측</strong>: 견적 기준일, 📥 Excel 다운로드, 📇 견적 정보, 💳 마진 순환 버튼 (<code>C</code> ~ <code>0</code>)<br />
+            <strong>우측</strong>: 🖥️ 모니터 · ⌨️ 무선키보드 · 🛠️ 초기 세팅비 · 🧠 메모리32GB · 💰 단가표시 옵션 스위치
+          </td>
+        </tr>
+        <tr>
+          <td>스토어 선택 탭</td>
+          <td><strong>⚡ 컴퓨존 조립PC</strong> 또는 <strong>🍎 Apple Store</strong> 중 원하는 매장을 선택합니다.</td>
+        </tr>
+        <tr>
+          <td>카테고리 버튼 바</td>
+          <td>
+            <strong>컴퓨존</strong>: AI PC, 프리미엄PC, 아이웍스PC, 추천조립PC, 게임으로PC찾기, 금액대로 찾기<br />
+            <strong>Apple Store</strong>: MacBook, iMac, Mac mini, Mac Studio, iPad & iPhone, 주변기기 & Care+, 전제품 통합 + <strong>[🔄 공홈 실시간 새로고침]</strong>
+          </td>
+        </tr>
+        <tr>
+          <td>결과 카드 및 상세 견적</td>
+          <td>
+            상단 요약 카드(가격, 출처, 배지, 스펙, 원클릭 중고검색/쿠팡/CTO 버튼)와 하단 부품별 실시간 상세 견적서 표로 구성됩니다.
+          </td>
+        </tr>
+      </table>
+    </section>
+
+    <!-- 4 -->
+    <section class="manual-sec" id="s4">
+      <h2>4. 견적 불러오기 (컴퓨존 조립PC & Apple Store)</h2>
+
+      <h3>컴퓨존 조립PC 카테고리</h3>
+      <table class="manual-table">
+        <tr><th>버튼</th><th>설명</th></tr>
+        <tr><td>📋 AI PC 견적</td><td>컴퓨존 AI 데스크탑 기획전 상품 라인업. 프로그램 시작 시 기본 표시됩니다.</td></tr>
+        <tr><td>💎 프리미엄PC</td><td>고사양 3D/렌더링/하이엔드 게임용 프리미엄 조립PC</td></tr>
+        <tr><td>🏆 아이웍스PC</td><td>컴퓨존 대표 자체 브랜드 아이웍스(iWorks) 시리즈</td></tr>
+        <tr><td>👍 추천조립PC</td><td>가성비 및 인기 구성의 추천 조립PC</td></tr>
+        <tr><td>🎮 게임으로PC찾기</td><td>즐길 게임과 모니터 해상도를 선택하여 최적 PC 추천 (<a href="#s6">6번 항목</a>)</td></tr>
+        <tr><td>💵 금액대로 찾기</td><td>예산 범위(예: 80~120만원)를 만원 단위로 입력해 전 카테고리 실시간 검색 (<a href="#s7">7번 항목</a>)</td></tr>
+      </table>
+
+      <h3>Apple Store 카테고리</h3>
+      <p>MacBook · iMac · Mac mini · Mac Studio · iPad &amp; iPhone · 주변기기 &amp; Care+ · Apple 전제품 통합 카테고리를 제공합니다. 실시간 애플 공식 홈페이지 판매가 및 최신 라인업을 보장합니다.</p>
+
+      <h3>카드 표시 및 기능</h3>
+      <ul>
+        <li><strong>가격 출처 배지</strong>:
+          <ul>
+            <li><span class="manual-badge-green">● 실시간 수집</span> — 방금 컴퓨존/애플 공식몰에서 가져온 최신 판매가</li>
+            <li><span class="manual-badge-blue">● Apple 공식몰 + CTO</span> — 애플 공홈 라이브 가격에 사용자 맞춤 옵션이 합산된 금액</li>
+            <li><span class="manual-badge-blue">● Apple 공식몰 현재 판매가</span> — 애플 공식 스토어 라이브 판매가</li>
+          </ul>
+        </li>
+        <li><strong>리스트로 보기</strong>: 견적 카드 영역 상단의 '리스트로보기' 버튼을 누르면 엑셀 표 형태의 컴팩트한 목록으로 전환되어 많은 구성을 한눈에 비교하기 편합니다.</li>
+      </ul>
+    </section>
+
+    <!-- 5 -->
+    <section class="manual-sec" id="s5">
+      <h2>5. 견적 옵션 (모니터 · 키보드 · 메모리 · 세팅비 · 단가표시 · 마진)</h2>
+      <p>견적 상단 바 우측의 버튼을 통해 고객의 요구사항에 맞게 품목을 즉시 추가하거나 제외할 수 있습니다. 버튼에 <code>모니터 (포함됨)</code>, <code>모니터 (제외됨)</code> 처럼 <strong>현재 상태가 직관적으로 표기</strong>됩니다.</p>
+      
+      <table class="manual-table">
+        <tr><th>옵션 버튼</th><th>동작 및 적용 대상</th><th>기본 설정</th></tr>
+        <tr><td>🖥️ 모니터</td><td>컴퓨존 견적에 모니터를 추가합니다. 금액은 견적 정보에서 수정 가능합니다.</td><td>제외 (기본 180,000원)</td></tr>
+        <tr><td>⌨️ 무선키보드</td><td>무선 키보드+마우스 세트를 추가합니다.</td><td>제외 (기본 30,000원)</td></tr>
+        <tr><td>🛠️ 초기 세팅비</td><td>컴퓨존 및 Mac 제품군에 OS/프로그램 세팅비를 추가합니다.</td><td>제외 (기본 0원, 별도청구)</td></tr>
+        <tr><td>🧠 메모리32GB 추가</td><td>기본 16GB 메모리를 32GB(듀얼채널)로 업그레이드합니다. (AI PC 전용)</td><td>제외</td></tr>
+        <tr><td>💰 단가표시 / 단가미표시</td><td>견적서의 개별 부품 단가를 공개할지, 아니면 숨기고 <strong>합계금액만 표시</strong>할지 결정합니다.</td><td>초록색 (단가표시)</td></tr>
+      </table>
+
+      <h3>💳 마진 순환 버튼</h3>
+      <p>상단 견적 정보 버튼 오른쪽에 위치한 <strong>💳 마진 버튼</strong>을 클릭할 때마다 아래 순서대로 실시간 변경됩니다:</p>
+      <div style="text-align:center; margin: 12px 0; font-size: 1.05rem; font-weight: 700; color: #93c5fd;">
+        <code>C (30% 소비자견적)</code> → <code>25%</code> → <code>20%</code> → <code>15%</code> → <code>10%</code> → <code>0% (원가견적)</code> → 다시 <code>C</code>
+      </div>
+      <ul>
+        <li><strong>부품 단가 비례 분배</strong>: 마진율을 바꾸면 총액뿐만 아니라 모든 부품의 단가에도 동일한 마진이 자동 반영되어 출력됩니다.</li>
+        <li><strong>만원 단위 올림</strong>: 마진이 적용된 견적은 만원 단위로 올림 처리되며, 부품 단가 합과의 차액은 <em>번들할인</em> 행으로 정밀 보정되어 합계가 완벽히 일치합니다. <code>0%</code> 원가견적은 컴퓨존 판매가 원 단위 그대로 출력됩니다.</li>
+      </ul>
+    </section>
+
+    <!-- 6 -->
+    <section class="manual-sec" id="s6">
+      <h2>6. 게임으로 PC 찾기</h2>
+      <p><strong>🎮 게임으로PC찾기</strong> 버튼을 누르면 2단계 추천 위자드가 열립니다.</p>
+      <ol class="manual-steps">
+        <li><strong>게임 선택</strong>: 플레이하려는 대표 게임(롤, 배그, 로스트아크, 디아블로, 발로란트 등)을 <strong>최대 4개</strong>까지 선택합니다.</li>
+        <li><strong>해상도 선택</strong>: 모니터 환경(FHD, QHD, 4K UHD)을 선택합니다.</li>
+        <li><strong>나에게 딱맞는 PC보기</strong>를 누르면 쾌적한 플레이를 보장하는 최적 사양의 조립PC 견적 카드가 추천됩니다.</li>
+      </ol>
+    </section>
+
+    <!-- 7 -->
+    <section class="manual-sec" id="s7">
+      <h2>7. 금액대로 찾기</h2>
+      <p><strong>💵 금액대로 찾기</strong> 버튼을 누르면 상단에 직관적인 금액 입력 바가 나타납니다. 팝업 창 이동 없이 현재 화면에서 바로 검색할 수 있습니다.</p>
+      <ol class="manual-steps">
+        <li>최저가와 최고가를 <strong>만원 단위</strong>(예: 70 ~ 100)로 입력합니다. 입력 시 하단에 원화(700,000원 ~ 1,000,000원)가 즉시 표기됩니다.</li>
+        <li><strong>검색</strong> 버튼을 누르면 컴퓨존의 추천조립PC · 아이웍스PC · 프리미엄PC 전체 DB에서 해당 예산에 맞는 구성을 <strong>가격 낮은 순 상위 10건</strong> 자동 추출합니다.</li>
+      </ol>
+    </section>
+
+    <!-- 8 -->
+    <section class="manual-sec" id="s8">
+      <h2>8. Apple Store 공식몰 실시간 동기화 & CTO 맞춤 구성</h2>
+
+      <h3>100% 공식몰 라이브 크롤링 및 구버전 데이터 정리</h3>
+      <p>Ver 8.0에서는 과거 프로그램에 내장되어 있던 오래된 하드코딩 모델 및 이전 스냅샷 데이터를 완전히 제거했습니다. 오직 <strong>애플 공식 홈페이지(한국)에서 현재 실제 판매 중인 정품 최신 라인업</strong>만 실시간 수집하여 보여줍니다.</p>
+
+      <h3>🔄 공홈 실시간 새로고침 버튼</h3>
+      <p>애플스토어 탭 선택 시 카테고리 우측 끝에 <span class="manual-badge-red">🔄 공홈 실시간 새로고침</span> 버튼이 제공됩니다. 애플 공홈의 신제품 발표나 가격 변동이 있을 때 이 버튼을 클릭하면, <strong>기존 저장 캐시를 100% 삭제하고 애플 공식몰 실시간 데이터를 즉시 다시 긁어와 완전 교체</strong>합니다.</p>
+
+      <h3>⚙️ 사양 CTO 맞춤 구성</h3>
+      <p>각 Apple 제품 카드 하단의 <strong>⚙️ 사양 CTO 수정</strong> 버튼을 누르면 공식 맞춤 옵션 창이 열립니다.</p>
+      <ul>
+        <li>CPU/GPU 코어 수, 통합 메모리(RAM) 용량, 초고속 SSD 용량, Nano-texture 디스플레이 글래스, AppleCare+ 보증 연장 등을 자유롭게 선택할 수 있습니다.</li>
+        <li>옵션 선택 시 추가 금액(Delta)과 총 견적 금액이 실시간 계산되며, <strong>💾 CTO 구성 적용</strong>을 누르면 카드와 상세 견적서에 완벽히 반영됩니다.</li>
+      </ul>
+
+      <h3>정품 단가 그대로 적용 (올림/반올림 없음)</h3>
+      <p>Apple Store 제품의 단가 및 총 견적 금액은 <strong>어떠한 올림이나 반올림도 적용하지 않고, 애플 공식 홈페이지에 공시된 실제 원단위 판매가 그대로</strong> 정확하게 표시되며, Excel 견적서에도 동일하게 공홈 가격 그대로 반영됩니다.</p>
+    </section>
+
+    <!-- 9 -->
+    <section class="manual-sec" id="s9">
+      <h2>9. 중고 시세 검색 (번개장터 · 중고나라 연동)</h2>
+      <p>신품 견적을 상담할 때 고객이 기존 중고 시세를 묻거나 예산 비교를 원할 경우, 번거롭게 검색창을 켤 필요 없이 카드에서 원클릭으로 중고 시세를 비교할 수 있습니다.</p>
+      <ul>
+        <li>각 견적 카드 하단에 <strong>⚡ 번개장터</strong> 및 <strong>🟢 중고나라</strong> 버튼이 배치되어 있습니다.</li>
+        <li><strong>조립PC 스마트 검색어 변환</strong>: 중고 장터에는 '아이웍스-0225' 같은 유통사 모델명이 등록되지 않습니다. 본 프로그램은 PC 견적 분석 엔진을 통해 <strong>핵심 부품인 CPU + 그래픽카드</strong>(예: <code>7800X3D RTX 4070 SUPER</code>, <code>i5 14400F RTX 4060</code>)로 검색어를 스마트하게 자동 조합하여 실제 거래 게시글만 콕 집어 열어 줍니다.</li>
+        <li><strong>Apple 정품 검색</strong>: 애플 제품은 제품명과 핵심 사양(예: <code>MacBook Air 13 M5 512GB</code>)으로 정밀 타겟팅 검색됩니다.</li>
+      </ul>
+    </section>
+
+    <!-- 10 -->
+    <section class="manual-sec" id="s10">
+      <h2>10. 견적 정보 등록 (닫기 버튼 · 저장 후 깜빡임 중지)</h2>
+      <p>Excel 견적서에 자동 인쇄될 <strong>견적처(고객) 정보</strong>, <strong>공급자(매장) 정보</strong>, 그리고 추가 부품 단가를 설정합니다. 상단 바의 <strong>📇 견적 정보</strong> 버튼을 누르세요.</p>
+
+      <h3>개선된 핵심 기능</h3>
+      <ul>
+        <li><strong>✨ 저장 후 깜빡임 자동 정지</strong>: 프로그램 실행 직후 입력을 안내하기 위해 깜빡이던 <strong>📇 견적 정보</strong> 버튼은, 내용을 입력하고 <strong>💾 저장</strong>을 누르면 즉시 깜빡임을 멈추고 일반 버튼으로 고정됩니다.</li>
+        <li><strong>🔴 선명한 빨간색 [닫기] 버튼</strong>: 다크모드에서 잘 보이지 않던 모달 우측 상단 <code>✕</code> 대신, 눈에 확 들어오는 빨간색 <span class="manual-badge-red">✕ 닫기</span> 버튼을 배치하여 언제든 간편하게 닫을 수 있습니다. (<span class="manual-key">Esc</span> 키로도 닫기 가능)</li>
+      </ul>
+
+      <table class="manual-table">
+        <tr><th>구분</th><th>항목</th><th>설명 및 특징</th></tr>
+        <tr><td>견적처</td><td>상호, 담당자, 견적일</td><td>견적일을 비워 두면 엑셀 다운로드 당일 날짜가 자동 입력됩니다.</td></tr>
+        <tr><td>공급자</td><td>상호, 대표자, 사업자번호, 주소, 업태/종목, 담당자, 전화, 이메일</td><td>한 번 저장하면 영구 보존되어 매번 입력할 필요가 없습니다.</td></tr>
+        <tr><td>추가 품목 금액</td><td>모니터, 키보드마우스, 초기 세팅비 기본 단가</td><td>기본값을 매장 정책에 맞게 자유롭게 수정할 수 있습니다. 0원으로 설정 시 '별도청구'로 표기됩니다.</td></tr>
+      </table>
+    </section>
+
+    <!-- 11 -->
+    <section class="manual-sec" id="s11">
+      <h2>11. Excel 견적서 다운로드 (전체 및 카드별)</h2>
+      <p>두 가지 방식으로 엑셀 파일을 내려받을 수 있습니다.</p>
+      <table class="manual-table">
+        <tr><th>다운로드 버튼</th><th>위치</th><th>내용 및 용도</th></tr>
+        <tr>
+          <td><strong>📥 Excel 다운로드</strong></td>
+          <td>상단 견적 바 좌측</td>
+          <td>현재 카테고리의 <strong>모든 견적을 1개의 엑셀 파일</strong>로 일괄 다운로드 (견적요약 시트 + 전체 폼 포함, 비교 제안용)</td>
+        </tr>
+        <tr>
+          <td><strong>📥 엑셀 견적서</strong></td>
+          <td>각 견적 카드 하단</td>
+          <td>해당 제품 <strong>단 1건만</strong> 깔끔하게 담긴 맞춤형 엑셀 견적서 다운로드 (고객 단일 발송용)</td>
+        </tr>
+      </table>
+      <div class="manual-tip">
+        <strong>스마트 파일명</strong>: 파일 이름만 보고도 내용을 알 수 있도록 모델명, 적용 옵션, 마진 구분, 견적일이 파일명에 자동 조합됩니다.<br />
+        예: <code>전문가형_아이웍스X-0912_오늘의견적_모니터포함_초기세팅비포함_소비자견적_2026-10-05.xlsx</code>
+      </div>
+    </section>
+
+    <!-- 12 -->
+    <section class="manual-sec" id="s12">
+      <h2>12. Excel 견적서 구성과 인쇄 (8종 서식 완비)</h2>
+      <p>생성된 엑셀 파일에는 다양한 업무 환경에 즉시 활용할 수 있도록 <strong>서로 다른 전문 디자인의 견적서 양식 8종</strong>이 각각의 시트로 완비되어 있습니다.</p>
+
+      <table class="manual-table">
+        <tr><th>시트명</th><th>스타일 및 추천 용도</th></tr>
+        <tr><td><strong>견적요약</strong></td><td>전체 견적을 한눈에 비교하는 마스터 요약표 (모델명, 상품번호, 견적금액, 정품링크)</td></tr>
+        <tr><td><strong>폼1 (표준)</strong></td><td>가장 널리 쓰이는 정통 B2B 표준 견적서 (공급자/공급받는자 직인란 완비)</td></tr>
+        <tr><td><strong>폼2 (인보이스)</strong></td><td>글로벌 비즈니스 및 영문 제출용 모던 INVOICE 스타일</td></tr>
+        <tr><td><strong>폼3 (보고서)</strong></td><td>사내 결재 및 기업 제안용 총액 강조 요약 보고서형</td></tr>
+        <tr><td><strong>폼4 (명세서)</strong></td><td>부품 규격 및 상세 모델명이 일목요연하게 정리된 엔지니어링 기술 명세서형</td></tr>
+        <tr><td><strong>폼5 (리테일)</strong></td><td>매장 즉시 발송 및 간이 확인용 심플 영수증 스타일</td></tr>
+        <tr><td><strong>폼6 (조립PC)</strong></td><td>부품별 무상 A/S 기간과 4대 소비자 유의사항이 명시된 <strong>조립PC 실무 전용 견적서</strong></td></tr>
+        <tr><td><strong>폼7 (데스크탑)</strong></td><td>상단 사업자 정보와 하단 정밀 제품 SPEC / 고객 발주확인란이 포함된 제안형 서식</td></tr>
+        <tr><td><strong>폼8 (클래식)</strong></td><td>공급자 등록번호 세로형 관공서/기업 납품 전통 서식 (첨부사항 및 특약란 구비)</td></tr>
+      </table>
+
+      <h3>인쇄 최적화 보장</h3>
+      <ul>
+        <li>모든 시트는 <strong>A4 세로 1페이지 폭 맞춤(Fit to Page Width)</strong>과 여백 15mm가 사전 세팅되어 있어, 엑셀에서 바로 인쇄하거나 PDF로 저장해도 우측 열이 잘리는 현상이 절대 없습니다.</li>
+        <li>모든 금액은 <strong>VAT(부가가치세) 포함</strong> 기준이며 표 상단에 <strong>'▶ 견적유효기간: 견적일로부터 24시간'</strong>이 자동 명시됩니다.</li>
+      </ul>
+    </section>
+
+    <!-- 13 -->
+    <section class="manual-sec" id="s13">
+      <h2>13. 컴퓨터 작업내역서 (출장/수리 작성 · 저장 · 인쇄 · 엑셀)</h2>
+      <p>매장 방문 고객이나 출장 A/S 시 컴퓨터 점검/수리/부품교체/공임 내역을 웹에서 간편히 작성하고, 종이 출력 · PDF 저장 · 엑셀 다운로드 · 서버 DB 보관까지 처리하는 현장 업무 지원 시스템입니다. 상단 네비게이션의 <strong>📋 작업내역서</strong>를 클릭하세요.</p>
+
+      <h3>주요 기능 및 사용법</h3>
+      <ol class="manual-steps">
+        <li><strong>내역 작성</strong>: 고객명, 연락처, 점검 일자, 컴퓨터 사양(CPU/RAM/SSD/VGA), 고객 접수 증상 및 점검 소견을 입력합니다.</li>
+        <li><strong>작업 및 부품 비용 산출</strong>: 수리 내용, 교체 부품, 수량, 단가를 입력하면 <strong>공급가액, 부가세, 총 청구금액이 자동 계산</strong>됩니다.</li>
+        <li><strong>전자 서명</strong>: 고객 확인 서명 패드가 내장되어 있어 마우스나 태블릿 펜, 스마트폰 터치로 현장에서 즉시 서명을 받을 수 있습니다.</li>
+        <li><strong>💾 저장하기 & 깜빡임 중지</strong>: 작성이 완료된 후 저장을 누르면 서버에 영구 보존되며, 상단 <strong>📋 작업내역서</strong> 버튼의 깜빡임이 멈춥니다. 과거 내역은 <strong>📂 저장된 내역 목록</strong>에서 언제든 다시 불러올 수 있습니다.</li>
+        <li><strong>🖨️ 인쇄 / PDF 출력</strong>: 버튼 클릭 시 A4 1페이지 규격에 최적화된 정식 작업내역서 양식으로 브라우저 인쇄 창이 열려 즉시 출력 또는 PDF 저장이 가능합니다.</li>
+        <li><strong>📥 Excel 다운로드</strong>: 정품 엑셀 서식 파일(<code>컴퓨터_작업내역서.xlsx</code>)로 다운로드됩니다.</li>
+        <li><strong>🔴 빨간색 [닫기] 버튼</strong>: 모달 우측 상단의 선명한 빨간색 버튼으로 작업을 마친 뒤 손쉽게 닫을 수 있습니다.</li>
+      </ol>
+    </section>
+
+    <!-- 14 -->
+    <section class="manual-sec" id="s14">
+      <h2>14. 팝업 계산기 (부가세 역계산 · 메모 도구)</h2>
+      <p>상단 메뉴의 <strong>🧮 계산기</strong>를 누르면 견적 창과 분리된 <strong>운영체제 독립 창</strong>으로 계산기가 팝업됩니다. 창 제목 바를 잡고 보조 모니터나 화면 구석으로 자유롭게 옮겨두고 사용할 수 있습니다.</p>
+
+      <h3>원클릭 부가세(VAT) 자동 계산</h3>
+      <table class="manual-table">
+        <tr><th>버튼</th><th>입력된 금액의 성격</th><th>연산 결과</th></tr>
+        <tr>
+          <td><strong>부가세 역계산</strong></td>
+          <td>부가세가 <strong>포함된 총 입금액/판매가</strong></td>
+          <td>금액을 1.1로 나누어 <strong>공급가액</strong>과 <strong>부가세(10%)</strong>를 분리 산출 (합계가 원단위까지 정확 일치)</td>
+        </tr>
+        <tr>
+          <td><strong>부가세 더하기</strong></td>
+          <td>부가세가 <strong>제외된 순수 공급가액</strong></td>
+          <td>10% 부가세를 가산하여 최종 <strong>청구 합계금액</strong>을 산출</td>
+        </tr>
+      </table>
+      <ul>
+        <li>연산 후 화면에 표시된 <strong>공급가액 · 부가세 · 합계 금액 행을 클릭</strong>하면 해당 금액이 계산기 입력창으로 즉시 복사되어 후속 계산이 매우 편리합니다.</li>
+        <li><code>0</code>, <code>00</code>, <code>000</code> 버튼이 탑재되어 큰 금액을 오타 없이 초고속으로 입력할 수 있으며 키보드 넘패드 입력도 완벽 지원합니다.</li>
+      </ul>
+    </section>
+
+    <!-- 15 -->
+    <section class="manual-sec" id="s15">
+      <h2>15. 쿠팡 검색과 파트너스 연결</h2>
+      <p>각 견적 카드의 <strong>🛒 쿠팡검색</strong> 버튼을 누르면 해당 구성을 쿠팡 로켓배송 등에서 즉시 검색해 줍니다. 조립PC는 쿠팡에 없는 완제품 모델명 대신 <strong>CPU와 그래픽카드 핵심 키워드</strong>로 자동 정제되어 검색됩니다.</p>
+      <div class="manual-note">
+        <strong>쿠팡 파트너스 API 연동 (선택)</strong>: 화면 좌측 상단 번개(⚡) 아이콘 바로 왼쪽의 숨겨진 히든 영역을 클릭하면 파트너스 API 설정 창이 열립니다. Access/Secret Key를 등록하면 검색 링크에 본인의 파트너스 추천 코드가 자동 부여됩니다.
+      </div>
+    </section>
+
+    <!-- 16 -->
+    <section class="manual-sec" id="s16">
+      <h2>16. 문제 해결 (FAQ)</h2>
+      <table class="manual-table">
+        <tr><th>현상</th><th>원인 및 해결 방법</th></tr>
+        <tr>
+          <td>다른 컴퓨터/스마트폰에서 접속이 안 됨</td>
+          <td>
+            1. 같은 공유기(Wi-Fi/LAN)에 연결되어 있는지 확인하세요.<br />
+            2. 상단 <span class="manual-badge-blue">🌐 네트워크 접속</span> 버튼을 눌러 정확한 IP(예: <code>http://192.168.0.13:8090/</code>)를 확인하세요.<br />
+            3. 서버 PC의 윈도우 방화벽에서 8090 포트를 허용해 주세요.
+          </td>
+        </tr>
+        <tr>
+          <td>Apple 제품 목록에 구형 모델이 보이거나 갱신이 필요함</td>
+          <td>
+            애플스토어 카테고리 우측 상단의 <span class="manual-badge-red">🔄 공홈 실시간 새로고침</span> 버튼을 클릭하세요. 기존 캐시를 완전히 파기하고 현재 공식몰 판매 제품으로 100% 덮어씁니다.
+          </td>
+        </tr>
+        <tr>
+          <td>견적정보/작업내역서 창을 닫고 싶음</td>
+          <td>모달 창 우측 상단의 <strong>빨간색 [닫기]</strong> 버튼을 누르거나 키보드 <span class="manual-key">Esc</span> 키를 누르세요.</td>
+        </tr>
+        <tr>
+          <td>견적서 엑셀에 공급자나 고객 정보가 비어 있음</td>
+          <td>상단 <strong>📇 견적 정보</strong> 버튼을 눌러 상호 및 대표자 정보를 입력하고 저장한 후 다시 다운로드하세요.</td>
+        </tr>
+        <tr>
+          <td>서버가 시작되지 않거나 포트 충돌 발생 시</td>
+          <td>프로그램 폴더의 <span class="manual-key">stop.bat</span> 을 실행해 기존 프로세스를 정리한 뒤 <span class="manual-key">run.bat</span> 을 다시 실행하세요. 해결되지 않을 경우 <span class="manual-key">force_stop.bat</span> 을 관리자 권한으로 실행합니다.</td>
+        </tr>
+        <tr>
+          <td>단가가 - 로 표시되고 합계만 나옴</td>
+          <td>상단 옵션 바의 <strong>💰</strong> 버튼이 '단가미표시'로 설정되어 있는 상태입니다. 버튼을 한 번 눌러 초록색 '단가표시'로 전환하세요.</td>
+        </tr>
+      </table>
+    </section>
+
+    <div class="manual-footer">
+      <p>컴퓨존 견적 자동화 Ver 8.0 · 개발 애플아저씨 · 기술 지원 및 문의 <a href="mailto:jskimjskim@gmail.com">jskimjskim@gmail.com</a></p>
+      <p>본 프로그램은 컴퓨존 및 Apple 공식 스토어의 실시간 정보를 바탕으로 작동하며, 가격 및 프로모션은 공식 홈페이지 기준에 따릅니다.</p>
+    </div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="ko" class="calc-html">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>계산기</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/css/style.css?v=20260910r" />
+</head>
+<body>
+  <div id="calcPanel" class="calc-panel calc-window" role="application" aria-label="계산기">
+    <div class="calc-head" id="calcHead">
+      <span class="calc-title">🧮 계산기</span>
+      <button type="button" class="calc-close" id="calcClose" aria-label="계산기 닫기">&times;</button>
+    </div>
+
+    <div class="calc-display">
+      <div class="calc-expr" id="calcExpr">&nbsp;</div>
+      <div class="calc-value" id="calcValue">0</div>
+    </div>
+
+    <div class="calc-vat">
+      <div class="calc-vat-btns">
+        <button type="button" class="calc-vat-btn" id="calcVatExtract" title="지금 금액을 부가세가 포함된 합계로 보고 공급가액과 부가세를 뽑아냅니다">부가세 역계산</button>
+        <button type="button" class="calc-vat-btn" id="calcVatAdd" title="지금 금액을 공급가액으로 보고 부가세를 더한 합계를 구합니다">부가세 더하기</button>
+      </div>
+      <dl class="calc-vat-rows">
+        <div class="calc-vat-row" data-vat="supply" title="누르면 이 금액을 계산기로 가져옵니다">
+          <dt>공급가액</dt><dd id="calcVatSupply">-</dd>
+        </div>
+        <div class="calc-vat-row" data-vat="tax" title="누르면 이 금액을 계산기로 가져옵니다">
+          <dt>부가세</dt><dd id="calcVatTax">-</dd>
+        </div>
+        <div class="calc-vat-row calc-vat-total" data-vat="total" title="누르면 이 금액을 계산기로 가져옵니다">
+          <dt>합계</dt><dd id="calcVatTotal">-</dd>
+        </div>
+      </dl>
+    </div>
+
+    <div class="calc-keys" id="calcKeys">
+      <button type="button" class="calc-key calc-fn" data-act="clear">C</button>
+      <button type="button" class="calc-key calc-fn" data-act="back">⌫</button>
+      <button type="button" class="calc-key calc-fn" data-act="percent">%</button>
+      <button type="button" class="calc-key calc-op" data-op="/">÷</button>
+
+      <button type="button" class="calc-key" data-num="7">7</button>
+      <button type="button" class="calc-key" data-num="8">8</button>
+      <button type="button" class="calc-key" data-num="9">9</button>
+      <button type="button" class="calc-key calc-op" data-op="*">×</button>
+
+      <button type="button" class="calc-key" data-num="4">4</button>
+      <button type="button" class="calc-key" data-num="5">5</button>
+      <button type="button" class="calc-key" data-num="6">6</button>
+      <button type="button" class="calc-key calc-op" data-op="-">−</button>
+
+      <button type="button" class="calc-key" data-num="1">1</button>
+      <button type="button" class="calc-key" data-num="2">2</button>
+      <button type="button" class="calc-key" data-num="3">3</button>
+      <button type="button" class="calc-key calc-op" data-op="+">+</button>
+
+      <div class="calc-keys-last">
+        <button type="button" class="calc-key" data-num="0">0</button>
+        <button type="button" class="calc-key calc-zero" data-num="00">00</button>
+        <button type="button" class="calc-key calc-zero" data-num="000">000</button>
+        <button type="button" class="calc-key" data-act="dot">.</button>
+        <button type="button" class="calc-key calc-eq" data-act="equals">=</button>
+      </div>
+    </div>
+  </div>
+  <script src="/static/js/calc.js?v=20260901g"></script>
+</body>
+</html>

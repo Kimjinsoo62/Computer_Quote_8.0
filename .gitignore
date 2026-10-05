@@ -1,0 +1,8 @@
+.env
+coupang_config.json
+apple_catalog_cache.json
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
