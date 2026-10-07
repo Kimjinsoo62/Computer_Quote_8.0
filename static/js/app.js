@@ -2007,20 +2007,38 @@ async function updateApp() {
     const res = await fetch("/api/update", { method: "POST" });
     const data = await res.json();
     if (data.success) {
-      alert(data.message + "\n\n15초 후 페이지가 새로고침됩니다.");
-      setTimeout(() => {
-        window.location.reload();
-      }, 15000);
+      alert(data.message + "\n\n서버가 다시 시작되면 이 창이 자동으로 새로고침됩니다.");
+      reloadWhenServerBack();
     } else {
       alert("업데이트 시작 실패:\n" + data.message);
     }
   } catch (err) {
     console.error("업데이트 요청 에러:", err);
-    alert("업데이트 요청 중 오류가 발생했습니다. 백엔드가 이미 종료되었을 수 있습니다. 15초 후 페이지를 새로고침합니다.");
-    setTimeout(() => {
-      window.location.reload();
-    }, 15000);
+    alert("업데이트 요청 중 오류가 발생했습니다. 백엔드가 이미 종료되었을 수 있습니다. 서버가 다시 시작되면 새로고침합니다.");
+    reloadWhenServerBack();
   }
+}
+
+// 업데이트 후 재시작된 서버가 응답하면 이 창을 새로고침 (run.bat은 새 창을 열지 않음)
+function reloadWhenServerBack() {
+  const startedAt = Date.now();
+  let wentDown = false;
+  const timer = setInterval(async () => {
+    let up = false;
+    try {
+      const r = await fetch("/api/server-info", { cache: "no-store" });
+      up = r.ok;
+    } catch (_) {
+      up = false;
+    }
+    if (!up) wentDown = true;
+    const elapsed = Date.now() - startedAt;
+    // 기존 서버가 내려간 뒤 다시 올라왔거나, 3분이 지나면 새로고침
+    if ((wentDown && up) || elapsed > 180000) {
+      clearInterval(timer);
+      window.location.reload();
+    }
+  }, 1500);
 }
 
 $("#btnUpdateApp")?.addEventListener("click", updateApp);
