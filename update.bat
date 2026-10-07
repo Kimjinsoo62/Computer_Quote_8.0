@@ -20,7 +20,7 @@ git pull origin main
 if %ERRORLEVEL% NEQ 0 (
     echo.
     echo [WARNING] Git pull failed.
-    echo (Git might not be installed, or no remote repository is configured.)
+    echo ^(Git might not be installed, or no remote repository is configured.^)
     echo Please update manually if necessary.
     echo.
 ) else (
