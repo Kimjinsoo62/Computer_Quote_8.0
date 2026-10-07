@@ -31,7 +31,7 @@ def _run_ps(script: str) -> str:
 
 
 def protected_pids() -> set[int]:
-    """자신과 부모(uvicorn reloader / run.bat cmd)는 강제 종료 대상에서 제외.
+    """자신과 부모(uvicorn reloader / START.bat cmd)는 강제 종료 대상에서 제외.
 
     콘솔에 attach 된 프로세스를 TerminateProcess 로 죽이면 conhost.exe 가
     콘솔 정리 중 크래시(스택 버퍼 오버런 대화상자)한다. 자신은 os._exit 로만 끝낸다.
@@ -147,7 +147,7 @@ def kill_uvicorn_processes(protected: set[int] | None = None) -> int:
 
 
 def close_app_browsers() -> int:
-    """run.bat 이 연 --app= 전용 창만 종료 (일반 브라우저 전체는 건드리지 않음)"""
+    """START.bat 이 연 --app= 전용 창만 종료 (일반 브라우저 전체는 건드리지 않음)"""
     out = _run_ps(
         "$n=0; "
         "Get-CimInstance Win32_Process -ErrorAction SilentlyContinue "

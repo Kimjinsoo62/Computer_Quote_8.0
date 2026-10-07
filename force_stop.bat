@@ -19,5 +19,5 @@ for %%P in (8090 8091) do (
 powershell -NoProfile -Command ^
   "Get-CimInstance Win32_Process -ErrorAction SilentlyContinue | Where-Object { $_.Name -match 'python' -and $_.CommandLine -match 'uvicorn' -and $_.CommandLine -match 'app\.main:app' } | ForEach-Object { Write-Host ('  kill uvicorn PID ' + $_.ProcessId); Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }"
 
-echo Done. Run run.bat to start fresh.
+echo Done. Run START.bat to start fresh.
 if /I not "%~1"=="/silent" pause

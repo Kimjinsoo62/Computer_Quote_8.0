@@ -45,5 +45,5 @@ timeout /t 3 /nobreak >nul
 
 REM Existing app window reloads itself, so don't open another one
 set "QUOTE_NO_BROWSER=1"
-start "" "run.bat"
+start "" "START.bat"
 exit

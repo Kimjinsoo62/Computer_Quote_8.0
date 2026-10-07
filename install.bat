@@ -118,9 +118,10 @@ echo.
 echo   가상환경: .venv
 echo.
 echo   다음 단계:
-echo     run.bat      서버 시작 (http://127.0.0.1:8080)
+echo     START.bat    서버 시작 (http://127.0.0.1:8090)
 echo     stop.bat     서버 중지
 echo ==========================================
 echo.
-pause
+REM START.bat calls with /auto: continue without waiting
+if /I not "%~1"=="/auto" pause
 exit /b 0

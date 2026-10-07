@@ -44,7 +44,7 @@ echo   - App browser windows closed
 echo   - Port 8090 / 8091 released
 echo   - Python cache cleaned
 echo.
-echo   Start again: run.bat
+echo   Start again: START.bat
 echo ==========================================
 echo.
 if /I not "%~1"=="/silent" pause

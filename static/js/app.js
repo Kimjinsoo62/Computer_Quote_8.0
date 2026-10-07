@@ -2019,7 +2019,7 @@ async function updateApp() {
   }
 }
 
-// 업데이트 후 재시작된 서버가 응답하면 이 창을 새로고침 (run.bat은 새 창을 열지 않음)
+// 업데이트 후 재시작된 서버가 응답하면 이 창을 새로고침 (START.bat은 새 창을 열지 않음)
 function reloadWhenServerBack() {
   const startedAt = Date.now();
   let wentDown = false;
