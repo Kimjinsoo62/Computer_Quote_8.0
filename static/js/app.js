@@ -1483,7 +1483,20 @@ function hidePriceResultChrome() {
   hideResultChrome();
 }
 
+/** 서버가 보낸 Apple 공식몰 수집 경고(개정 의심·접속 실패·새 제품군)를 결과 위에 보여 준다. */
+function renderCatalogWarnings(warnings) {
+  const box = $("#catalogWarn");
+  const list = $("#catalogWarnList");
+  if (!box || !list) return;
+  const items = Array.isArray(warnings) ? warnings : [];
+  list.innerHTML = items.map((w) => `<li>${escapeHtml(w)}</li>`).join("");
+  if (items.length) show(box);
+  else hide(box);
+}
+$("#catalogWarnClose")?.addEventListener("click", () => hide($("#catalogWarn")));
+
 function applyQuotePayload(data) {
+  renderCatalogWarnings(data?.warnings);
   quoteData = data;
   hasLoadedOnce = true;
   activeTab = 0;

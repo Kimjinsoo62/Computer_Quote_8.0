@@ -251,6 +251,7 @@ class TodayQuotesResult:
     logic_steps: list[dict[str, str]]
     catalog_synced_at: str = ""
     engine: str = ""
+    warnings: list[str] = field(default_factory=list)  # 공식몰 수집 상태 점검 경고 (Apple)
 
 
 def _sort_key(category: str) -> int:
@@ -1401,6 +1402,8 @@ def today_quotes_to_dict(result: TodayQuotesResult) -> dict[str, Any]:
     }
     if result.catalog_synced_at:
         data["catalog_synced_at"] = result.catalog_synced_at
+    if result.warnings:
+        data["warnings"] = result.warnings
     return data
 
 
@@ -1556,6 +1559,7 @@ def fetch_apple_quotes(
         logic_steps=apple_steps,
         catalog_synced_at=synced_at,
         engine="apple-live-catalog",
+        warnings=list(meta.get("warnings") or []),
     )
 
 

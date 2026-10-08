@@ -73,6 +73,7 @@ FAMILY_LABELS = {
 }
 
 _html_cache: dict[str, tuple[float, str]] = {}
+_final_urls: dict[str, str] = {}  # 요청 URL → 리다이렉트 후 최종 URL
 _catalog_cache: dict[str, dict[str, Any]] = {}
 _cache_lock = threading.Lock()
 
@@ -92,12 +93,21 @@ def scrape_live_apple_html(url: str) -> str:
         req = urllib.request.Request(url, headers=headers)
         with urllib.request.urlopen(req, timeout=FETCH_TIMEOUT_SEC) as resp:
             html = resp.read().decode("utf-8", errors="replace")
+            final_url = resp.geturl()
     except Exception as e:
         logger.warning("Apple HTML fetch failed for %s: %s", url, e)
         return ""
     with _cache_lock:
         _html_cache[url] = (time.time(), html)
+        _final_urls[url] = final_url
     return html
+
+
+def _redirected_off_shop(url: str) -> bool:
+    """구매 페이지 링크가 소개 페이지 등으로 넘어갔는지(예: 단종된 ipad-10-2 → /kr/ipad/). 이런 링크는 실패가 아니다."""
+    with _cache_lock:
+        final = _final_urls.get(url, url)
+    return "/shop/buy-" not in final
 
 
 def fetch_live_apple_price(item: dict) -> tuple[int, str]:
@@ -141,6 +151,16 @@ def fetch_apple_catalog(
     # 실시간 공홈 크롤링 수행: 이전 리스트를 완전히 비우고 신규 수집된 리스트로 교체
     live_items, meta = _sync_catalog(cat_key)
     if live_items:
+        # 상태 점검: 직전 성공 때보다 모델 수가 크게 줄면 개정으로 일부를 못 읽었을 가능성이 크다.
+        prev = _load_snapshot(cat_key)
+        prev_n = len((prev or {}).get("items") or [])
+        if prev_n >= 4 and len(live_items) < prev_n * 0.7:
+            meta.setdefault("warnings", []).append(
+                f"모델 수가 직전 {prev_n}개에서 {len(live_items)}개로 크게 줄었습니다. "
+                "공식몰 단종이 아니라면 페이지 구조 변경을 확인하세요."
+            )
+        for w in meta.get("warnings") or []:
+            logger.warning("[Apple 상태 점검] %s: %s", cat_key, w)
         payload = {
             "schema": CATALOG_SCHEMA,
             "fetched_ts": time.time(),
@@ -172,6 +192,12 @@ def fetch_apple_catalog(
             _catalog_cache[cat_key] = snap
         meta = dict(snap.get("meta") or {})
         meta["from_snapshot"] = True
+        synced = str(meta.get("synced_at") or "").replace("T", " ")
+        meta["warnings"] = [
+            f"공식몰에서 최신 목록을 가져오지 못해 마지막으로 저장된 데이터({synced or '시각 미상'})를 표시합니다. "
+            "인터넷 연결을 확인하고, 계속되면 공식몰 페이지 구조 변경을 확인하세요."
+        ]
+        logger.warning("[Apple 상태 점검] %s: %s", cat_key, meta["warnings"][0])
         return list(snap["items"]), meta
 
     return [], {"error": "catalog_unavailable", "from_snapshot": False}
@@ -185,6 +211,7 @@ def _sync_catalog(cat_key: str) -> tuple[list[dict[str, Any]], dict[str, Any]]:
 
     items: list[dict[str, Any]] = []
     errors = 0
+    failed: list[str] = []
     with ThreadPoolExecutor(max_workers=6) as pool:
         futs = {
             pool.submit(_parse_family_page, fam["url"], fam): fam
@@ -197,8 +224,41 @@ def _sync_catalog(cat_key: str) -> tuple[list[dict[str, Any]], dict[str, Any]]:
             except Exception as e:
                 logger.warning("Apple family parse failed for %s: %s", fam["url"], e)
                 errors += 1
+                failed.append(fam["slug"])
                 continue
+            if not parsed:
+                if _redirected_off_shop(fam["url"]):
+                    logger.info("Apple family %s redirects off the shop (retired link); skipped", fam["slug"])
+                else:
+                    failed.append(fam["slug"])  # 구매 페이지인데 상품 데이터를 못 읽음 → 구조 개정 의심
             items.extend(parsed)
+
+    # 상태 점검: 공식몰 개정으로 조용히 빠지는 것을 화면·로그에 알린다.
+    warnings: list[str] = []
+    if failed:
+        warnings.append(
+            f"공식몰에서 {len(failed)}개 제품군을 읽지 못했습니다({', '.join(sorted(failed))}). "
+            "페이지 구조가 바뀌었을 수 있어 해당 제품이 목록에서 빠졌습니다."
+        )
+    cto_fail = sorted({it["tier_key"] for it in items if it.get("_warn") == "cto_api"})
+    no_coll = sorted({it["family"] for it in items if it.get("_warn") == "no_collection"})
+    if cto_fail:
+        warnings.append(
+            f"구성하기(CTO) 가격 API 응답이 없어 {len(cto_fail)}개 모델의 맞춤 구성·기본 사양 보정을 쓸 수 없습니다"
+            f"({', '.join(cto_fail)})."
+        )
+    if no_coll:
+        warnings.append(
+            f"구성하기(CTO) API 주소를 찾지 못했습니다({', '.join(no_coll)}). 해당 Mac 은 비교 방식 옵션만 표시됩니다."
+        )
+    for it in items:
+        it.pop("_warn", None)
+    unknown = _unknown_families(cat_key)
+    if unknown:
+        warnings.append(
+            f"새 제품군 발견: {', '.join(unknown)} — 어느 카테고리에도 속하지 않아 표시되지 않습니다. "
+            "app/config.py 의 APPLE_CATALOG_SOURCES 에 추가가 필요합니다."
+        )
 
     items.sort(
         key=lambda it: (
@@ -215,8 +275,39 @@ def _sync_catalog(cat_key: str) -> tuple[list[dict[str, Any]], dict[str, Any]]:
         "errors": errors,
         "from_snapshot": False,
         "source": "apple_official_catalog",
+        "warnings": warnings,
     }
     return items, meta
+
+
+def _slug_covered(kind: str, slug: str) -> bool:
+    """이 제품군 링크가 APPLE_CATALOG_SOURCES 의 어느 카테고리에 들어가는지 (_discover_family_urls 와 같은 규칙)."""
+    if any(n in slug for n in SKIP_SLUG_NEEDLES):
+        return True  # 프로모션·비교 페이지 등 원래 건너뛰는 링크
+    for spec in APPLE_CATALOG_SOURCES.values():
+        if kind not in (spec.get("kinds") or ("mac", "ipad", "iphone")):
+            continue
+        if slug in set(spec.get("exclude_slugs") or ()):
+            return True
+        prefixes = spec.get("include_prefixes") or ()
+        if not prefixes or any(
+            slug == p or slug.startswith(p) or slug.startswith(p.rstrip("-") + "-") for p in prefixes
+        ):
+            return True
+    return False
+
+
+def _unknown_families(cat_key: str) -> list[str]:
+    """지금 불러오는 카테고리의 허브 페이지에서 어느 카테고리에도 속하지 않는 새 제품군 링크를 찾는다."""
+    hubs = {h for spec in _source_specs(cat_key) for h in spec.get("hubs") or []}
+    found: set[str] = set()
+    for hub in hubs:
+        html = scrape_live_apple_html(hub)  # 방금 제품군을 찾을 때 받은 페이지라 캐시에서 나온다
+        for kind, slug in FAMILY_HREF_RE.findall(html or ""):
+            kind, slug = kind.lower(), slug.lower()
+            if not _slug_covered(kind, slug):
+                found.add(f"{kind}/{slug}")
+    return sorted(found)
 
 
 def _discover_family_urls(cat_key: str) -> list[dict[str, Any]]:
@@ -284,14 +375,19 @@ def _parse_family_page(url: str, fam: dict[str, Any]) -> list[dict[str, Any]]:
     data = _extract_product_selection(html)
     if not data:
         return []
-    if _is_mac_configurator(data):
+    is_mac = _is_mac_configurator(data)
+    if is_mac:
         candidates = _parse_mac_configurator(data, fam)
     else:
         candidates = _parse_metrics_products(data, fam)
     # 구성하기(CTO) 가격 API 의 컬렉션 이름. Mac 구매 페이지에만 있다.
     m = re.search(r"updateConfigUrl:\s*'[^']*collection=([A-Za-z0-9_]+)", html)
     collection = m.group(1) if m else ""
-    return _pick_representatives(candidates, fam, collection)
+    items = _pick_representatives(candidates, fam, collection)
+    if is_mac and not collection:
+        for it in items:
+            it["_warn"] = "no_collection"  # 상태 점검: 구성하기 API 주소를 못 찾음
+    return items
 
 
 def _extract_product_selection(html: str) -> dict[str, Any] | None:
@@ -458,19 +554,23 @@ def _pick_representatives(
         if not best:
             continue
         cfg = None
+        base_ok = True
         if collection and best.get("cfg_params"):
             cfg = {"collection": collection, "params": dict(best["cfg_params"])}
-            best = _apply_base_config_specs(best, cfg)
-        picked.append(_finalize_item(best, fam, cto_groups=_build_live_cto(best, rows), cfg=cfg))
+            best, base_ok = _apply_base_config_specs(best, cfg)
+        final = _finalize_item(best, fam, cto_groups=_build_live_cto(best, rows), cfg=cfg)
+        if not base_ok:
+            final["_warn"] = "cto_api"  # 상태 점검: 구성하기 API 응답 없음
+        picked.append(final)
     return picked
 
 
-def _apply_base_config_specs(item: dict[str, Any], cfg: dict[str, Any]) -> dict[str, Any]:
+def _apply_base_config_specs(item: dict[str, Any], cfg: dict[str, Any]) -> tuple[dict[str, Any], bool]:
     """구매 페이지에는 기본 메모리·SSD 가 없어 최소 용량으로 적히는 모델이 있다(예: Mac mini M5 Pro 는 24GB·512GB).
-    구성하기 API 의 기본 구성으로 사양 표기를 바로잡는다. 실패하면 그대로 둔다."""
+    구성하기 API 의 기본 구성으로 사양 표기를 바로잡는다. 실패하면 그대로 두고 False 를 돌려준다."""
     base = _update_config(cfg, {})
     if not base:
-        return item
+        return item, False
     sel = _selected_values(base)
     specs = dict(item.get("specs") or {})
     mem = sel.get("memory-dimensionMemory")
@@ -479,7 +579,7 @@ def _apply_base_config_specs(item: dict[str, Any], cfg: dict[str, Any]) -> dict[
     sto = sel.get("storage-dimensionCapacity")
     if sto:
         specs["storage"] = _human_dim("storage", sto)
-    return {**item, "specs": specs}
+    return {**item, "specs": specs}, True
 
 
 def _pick_best(rows: list[dict[str, Any]]) -> dict[str, Any] | None:

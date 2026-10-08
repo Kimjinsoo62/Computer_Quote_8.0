@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/static/css/style.css?v=20261008l" />
+  <link rel="stylesheet" href="/static/css/style.css?v=20261008m" />
 </head>
 <body>
   <nav class="nav">
@@ -155,6 +155,11 @@
       </div>
 
       <div id="error" class="error-box hidden"></div>
+      <div id="catalogWarn" class="catalog-warn hidden" role="status">
+        <button type="button" id="catalogWarnClose" class="catalog-warn-close" aria-label="경고 닫기">✕</button>
+        <strong>⚠️ Apple 공식몰 수집 상태 점검</strong>
+        <ul id="catalogWarnList"></ul>
+      </div>
 
       <div id="priceSearchBar" class="price-search-inline hidden">
         <div class="price-search-form">
@@ -683,6 +688,6 @@
     <span id="busyText">처리 중…</span>
   </div>
 
-  <script src="/static/js/app.js?v=20261008l"></script>
+  <script src="/static/js/app.js?v=20261008m"></script>
 </body>
 </html>

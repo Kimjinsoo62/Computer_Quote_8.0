@@ -18,8 +18,8 @@
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
-/* 본문 7pt. rem �?지?�한 ?�목·버튼·?�는 ??값을 기�??�로 비�??�다.
-   브라?��? 기본 16px(12pt) ?��?7/12 �? */
+/* 본문 7pt. rem �?지?�한 ?�목·버튼·?�는 ??값을 기�??�로 비�??�다.
+   브라?��? 기본 16px(12pt) ?��?7/12 �? */
 html {
   font-size: 7pt;
 }
@@ -36,7 +36,7 @@ body {
   min-height: 100vh;
 }
 
-/* 1920 ??�� 채워 ???�면??카드�???많이 ?�는?? */
+/* 1920 ??�� 채워 ???�면??카드�???많이 ?�는?? */
 .container { max-width: 1860px; margin: 0 auto; padding: 0 12px; }
 
 a { color: var(--accent); text-decoration: none; }
@@ -56,8 +56,8 @@ a:hover { text-decoration: underline; }
 .nav-brand {
   display: flex; align-items: center; gap: 0;
 }
-/* 개발???�용 ?�든 ?�역: ?�떤 ?�태?�서???�각???�서�??�기지 ?�는??
-   hover 배경 · ?�커??�?· ?��???커서 · ?�결??밑줄 모두 ?�거. */
+/* 개발???�용 ?�든 ?�역: ?�떤 ?�태?�서???�각???�서�??�기지 ?�는??
+   hover 배경 · ?�커??�?· ?��???커서 · ?�결??밑줄 모두 ?�거. */
   width: 18px;
   height: 28px;
   margin-right: 2px;
@@ -82,7 +82,7 @@ a:hover { text-decoration: underline; }
 .nav-links { display: flex; gap: 6px; align-items: center; }
 .nav-links a { color: var(--muted); font-size: 1rem; text-decoration: none; }
 .nav-links a:hover { color: var(--text); }
-/* ?�단 메뉴??버튼??링크??.nav-links a ???�을 ?�르지 ?�도�?별도 지??*/
+/* ?�단 메뉴??버튼??링크??.nav-links a ???�을 ?�르지 ?�도�?별도 지??*/
 .nav-links .btn { color: var(--text); text-decoration: none; }
 .nav-links .btn:hover { color: var(--primary); text-decoration: none; }
 .nav-links a.is-active { color: var(--accent); font-weight: 600; }
@@ -121,12 +121,12 @@ a:hover { text-decoration: underline; }
 }
 .hero-actions { display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; margin-bottom: 10px; }
 .cat-group { margin-bottom: 4px; }
-/* 카테고리 버튼??가�???�� ?�눠 채우�???좌우 �?공간???�앤?? */
+/* 카테고리 버튼??가�???�� ?�눠 채우�???좌우 �?공간???�앤?? */
 .cat-group .btn { flex: 1 1 0; min-width: 108px; }
 .hero-date { color: var(--muted); font-size: 1rem; }
 
-/* ?�단 �? 좌측?� 기�??�·문???�션, ?�측?� 견적 ?�션 ?��?.
-   ?��? 버튼 ?�체가 ?�재 ?�태�??�시?��?�?별도???�태 ?�스?�는 ?��? ?�는?? */
+/* ?�단 �? 좌측?� 기�??�·문???�션, ?�측?� 견적 ?�션 ?��?.
+   ?��? 버튼 ?�체가 ?�재 ?�태�??�시?��?�?별도???�태 ?�스?�는 ?��? ?�는?? */
 .hero-topbar {
   position: relative; z-index: 5;
   display: flex; justify-content: space-between; align-items: flex-start;
@@ -207,9 +207,9 @@ a:hover { text-decoration: underline; }
   border-color: #34d399;
   color: #6ee7b7;
 }
-/* 마진 ?�환 버튼: ?�릭???�마???�비?�견????25 ??20 ??15 ??10 ??0 ?�로 바뀐다. */
+/* 마진 ?�환 버튼: ?�릭???�마???�비?�견????25 ??20 ??15 ??10 ??0 ?�로 바뀐다. */
 .margin-cycle {
-  /* ?�벨??"?��?"/"25"/"0" �?짧아 값마??버튼 ?�비가 ?�들리�? ?�게 고정??�� 준?? */
+  /* ?�벨??"?��?"/"25"/"0" �?짧아 값마??버튼 ?�비가 ?�들리�? ?�게 고정??�� 준?? */
   min-width: 48px; justify-content: center; font-weight: 700;
   border-color: var(--primary); color: #fff;
   background: linear-gradient(135deg, var(--primary), var(--primary2));
@@ -369,6 +369,18 @@ a:hover { text-decoration: underline; }
   background: rgba(248, 113, 113, 0.1); border: 1px solid rgba(248, 113, 113, 0.3);
   color: var(--red); padding: 8px 12px; border-radius: var(--radius); margin-bottom: 10px;
 }
+/* Apple 공식몰 수집 상태 점검 경고 (개정·접속 실패·새 제품군) */
+.catalog-warn {
+  position: relative;
+  background: rgba(251, 191, 36, 0.1); border: 1px solid rgba(251, 191, 36, 0.4);
+  color: #fbbf24; padding: 6px 28px 6px 12px; border-radius: var(--radius); margin-bottom: 10px;
+}
+.catalog-warn ul { margin: 4px 0 0 16px; color: var(--text); }
+.catalog-warn li { margin: 2px 0; }
+.catalog-warn-close {
+  position: absolute; top: 4px; right: 6px; background: none; border: none;
+  color: #fbbf24; cursor: pointer; font-size: 1rem;
+}
 .empty-state { text-align: center; padding: 28px 12px; color: var(--muted); }
 .empty-icon { font-size: 2rem; margin-bottom: 8px; }
 .empty-state h3 { color: var(--text); margin-bottom: 8px; }
@@ -390,7 +402,7 @@ a:hover { text-decoration: underline; }
 .footer-contact a:hover { text-decoration: underline; }
 .footer-note { margin-top: 2px; font-size: 1rem; }
 
-/* 견적 ?�보 관�?모달 */
+/* 견적 ?�보 관�?모달 */
 .modal-overlay {
   position: fixed; inset: 0; z-index: 200;
   background: rgba(2, 6, 23, 0.75); backdrop-filter: blur(6px);
@@ -544,7 +556,7 @@ a:hover { text-decoration: underline; }
   transform: translateY(-1px); box-shadow: 0 4px 12px rgba(22, 163, 74, 0.35);
   text-decoration: none;
 }
-/* 카드�?개별 견적???�운로드 */
+/* 카드�?개별 견적???�운로드 */
 .btn-excel-one {
   background: rgba(37, 99, 235, 0.15); color: #93c5fd;
   border: 1px solid rgba(37, 99, 235, 0.45);
@@ -752,7 +764,7 @@ a:hover { text-decoration: underline; }
   box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.35);
 }
 
-/* 금액?��?찾기 (?�재 ?�면 ?�라?? */
+/* 금액?��?찾기 (?�재 ?�면 ?�라?? */
 .price-search-inline {
   margin: 2px 0 8px;
   padding: 8px 10px 6px;
@@ -833,7 +845,7 @@ a:hover { text-decoration: underline; }
 }
 
 /* ==========================================================================
-   컴퓨???�업?�역??모달 & ???��???
+   컴퓨???�업?�역??모달 & ???��???
    ========================================================================== */
 .modal-xl {
   max-width: 1100px;
@@ -919,7 +931,7 @@ a:hover { text-decoration: underline; }
   transform: translateY(-1px);
 }
 
-/* A4 ?�물 ?�이??컨테?�너 (?�면?�서??종이 ?�낌 ?�공) */
+/* A4 ?�물 ?�이??컨테?�너 (?�면?�서??종이 ?�낌 ?�공) */
 .tr-paper {
   background: #ffffff;
   color: #1e293b;
@@ -932,7 +944,7 @@ a:hover { text-decoration: underline; }
   margin: 0 auto;
 }
 
-/* ?�이???�단 브랜??& ?�?��? */
+/* ?�이???�단 브랜??& ?�?��? */
 .tr-paper-header {
   display: grid;
   grid-template-columns: 1fr 260px;
@@ -996,7 +1008,7 @@ a:hover { text-decoration: underline; }
 .tr-inp-phone { width: 110px; flex: none; }
 .tr-inp-biz { width: 120px; flex: none; }
 
-/* 문서 ?�?��? 박스 */
+/* 문서 ?�?��? 박스 */
 .tr-doc-box {
   border: 2px solid #1e3a8a;
   border-radius: 4px;
@@ -1034,7 +1046,7 @@ a:hover { text-decoration: underline; }
   color: #0f172a;
 }
 
-/* ?�션 공통 */
+/* ?�션 공통 */
 .tr-sec {
   margin-bottom: 6px;
 }
@@ -1054,7 +1066,7 @@ a:hover { text-decoration: underline; }
   margin-bottom: 4px;
 }
 
-/* ?�이�?공통 */
+/* ?�이�?공통 */
 .tr-table {
   width: 100%;
   border-collapse: collapse;
@@ -1122,7 +1134,7 @@ a:hover { text-decoration: underline; }
   width: 140px;
 }
 
-/* ?�업 ?�역 ?�이�?*/
+/* ?�업 ?�역 ?�이�?*/
 .tr-task-del-btn {
   background: #fee2e2;
   color: #ef4444;
@@ -1140,7 +1152,7 @@ a:hover { text-decoration: underline; }
   font-size: 1rem;
 }
 
-/* ?�인 �??�명 */
+/* ?�인 �??�명 */
 .tr-sign-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -1188,7 +1200,7 @@ a:hover { text-decoration: underline; }
   font-size: 1rem;
 }
 
-/* ?�의?�항 */
+/* ?�의?�항 */
 .tr-notices {
   border: 1px solid #cbd5e1;
   border-radius: 4px;
@@ -1210,7 +1222,7 @@ a:hover { text-decoration: underline; }
   margin-bottom: 1px;
 }
 
-/* ?�업?�역??목록 ?�이�?*/
+/* ?�업?�역??목록 ?�이�?*/
 .tr-list-toolbar {
   display: flex;
   justify-content: space-between;
@@ -1248,7 +1260,7 @@ a:hover { text-decoration: underline; }
 }
 
 /* ==========================================================================
-   ?���?A4 종이 ?�쇄 / PDF 출력 최적???��???(@media print)
+   ?���?A4 종이 ?�쇄 / PDF 출력 최적???��???(@media print)
    ========================================================================== */
 @media print {
   html { font-size: 10pt !important; }
@@ -1340,7 +1352,7 @@ a:hover { text-decoration: underline; }
   }
 }
 
-/* ?�립 �?계산�???버튼????보이???�에??창을 최�????�게 맞춘??*/
+/* ?�립 �?계산�???버튼????보이???�에??창을 최�????�게 맞춘??*/
 html.calc-html,
 html.calc-html body {
   margin: 0;
@@ -1440,7 +1452,7 @@ html.calc-html body {
 }
 
 /* ==========================================================================
-   주의 ?�기 깜박??Blink Alert) ?��???- 가�??�이??미갱??경고
+   주의 ?�기 깜박??Blink Alert) ?��???- 가�??�이??미갱??경고
    ========================================================================== */
 @keyframes warning-text-blink {
   0%, 100% {
@@ -1481,18 +1493,18 @@ html.calc-html body {
   }
 }
 
-/* 버튼 ?�두�?�?배경 ?�스 */
+/* 버튼 ?�두�?�?배경 ?�스 */
 .blink-warning {
   animation: warning-btn-pulse 1.2s infinite ease-in-out !important;
 }
 
-/* 글??깜박???�과 */
+/* 글??깜박???�과 */
 .blink-warning-text {
   animation: warning-text-blink 1.2s infinite ease-in-out !important;
   font-weight: 700 !important;
 }
 
-/* ?�풋 ?�두�?깜박???�과 */
+/* ?�풋 ?�두�?깜박???�과 */
 .blink-warning-input {
   animation: warning-input-blink 1.2s infinite ease-in-out !important;
 }
@@ -1518,14 +1530,14 @@ html.calc-html body {
   display: none !important;
 }
 
-/* ?�업?�역???�호/브랜??박스 경고 ???��???*/
+/* ?�업?�역???�호/브랜??박스 경고 ???��???*/
 .tr-brand-info.blink-warning {
   border: 1px dashed rgba(255, 51, 75, 0.6);
   border-radius: 6px;
   padding: 4px 8px;
 }
 
-/* ?�트?�크 ?�속 공유 모달 */
+/* ?�트?�크 ?�속 공유 모달 */
 .net-share-card {
   background: var(--surface-2, #1e293b);
   border: 1px solid var(--border, #334155);
