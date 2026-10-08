@@ -436,6 +436,7 @@ def api_apple_cto(tier_key: str, sel: str = "", changed: str = ""):
             "base_total": live["base_total"],
             "selected": live["selected"],
             "parts": live["parts"],
+            "notice": live.get("notice") or "",
             "source": "apple_cto_api",
         }
     options = fetch_apple_cto_options(tier_key)

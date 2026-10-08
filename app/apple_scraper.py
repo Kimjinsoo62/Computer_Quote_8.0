@@ -997,6 +997,20 @@ def fetch_apple_cto_live(
             if not rejected or len(rejected) == len(pending):
                 break
             pending = rejected
+
+    if changed and changed in sel and (not cur or _selected_values(cur).get(changed) != sel[changed]):
+        # 방금 고른 값이 다른 항목을 바꿔야만 가능한 경우(예: Air 13 기본 칩에서 24GB → 10코어 GPU 필요).
+        # 공식몰처럼 다른 항목(프로세서 먼저)을 바꿔 그 값을 허용하는 가장 싼 구성을 찾는다.
+        found = _find_enabling_config(cfg, base, changed, sel[changed], _took)
+        if found:
+            accepted, cur = found
+            for dim, val in sel.items():
+                if dim in accepted:
+                    continue
+                trial = {**accepted, dim: val}
+                body = _update_config(cfg, trial)
+                if _took(body, trial):
+                    accepted, cur = trial, body
     if not cur:
         return None
 
@@ -1004,6 +1018,12 @@ def fetch_apple_cto_live(
     total = _total_of(cur) or base_total
     base_sel = _selected_values(base)
     cur_sel = _selected_values(cur)
+    notice = ""
+    if changed and changed in sel and cur_sel.get(changed) != sel[changed]:
+        notice = (
+            f"{_live_option_label(changed, sel[changed])}은(는) 이 모델에서 고를 수 없어 이전 구성을 유지했습니다. "
+            "다른 카드(상위 칩 모델)에서 선택해 보세요."
+        )
 
     groups: list[dict[str, Any]] = []
     for dim, name in CTO_LIVE_DIMS.items():
@@ -1100,7 +1120,57 @@ def fetch_apple_cto_live(
         "base_total": base_total,
         "selected": {k: v for k, v in cur_sel.items() if k in CTO_LIVE_DIMS},
         "parts": parts,
+        "notice": notice,
     }
+
+
+def _find_enabling_config(cfg, base, changed: str, value: str, took) -> tuple[dict[str, str], dict[str, Any]] | None:
+    """changed=value 를 허용하는 구성을 찾는다. 다른 항목 하나를 바꿔 보되 프로세서부터, 싼 값부터 시도한다."""
+    opts = base.get("options") or {}
+    others = sorted(
+        (d for d in CTO_LIVE_DIMS if d != changed and d in opts),
+        key=lambda d: 0 if d.startswith("processor-") else 1,
+    )
+    for dim in others:
+        o = opts.get(dim) or {}
+        cands: list[tuple[int, str]] = []
+        for v, info in (o.get("compatibleOptions") or {}).items():
+            if not info.get("isBlocked"):
+                cands.append((_price_of(base, info.get("priceDelta")) or 0, str(v)))
+        for v, info in (o.get("upgradeOptions") or {}).items():
+            if not info.get("isBlocked"):
+                cands.append((10**12, str(v)))  # 가격 미상: 뒤에서 시도
+        if dim.startswith("processor-"):
+            # 같은 구성 그룹의 다른 카드(예: iMac 10코어, Mac mini M5 Pro) 칩도 후보로 넣는다.
+            seen = {v for _c, v in cands}
+            for v in _sibling_values(cfg.get("collection") or "", dim):
+                if v not in seen:
+                    cands.append((10**11, v))
+        for _cost, v in sorted(cands, key=lambda c: (c[0], _dim_sort_key(c[1]))):
+            trial = {changed: value, dim: v}
+            body = _update_config(cfg, trial)
+            if took(body, trial):
+                return trial, body
+    return None
+
+
+def _sibling_values(collection: str, dim: str) -> list[str]:
+    """같은 구성하기 컬렉션의 다른 카드들이 쓰는 dim 값 (예: iMac 8코어 카드에서 본 iMac 10코어의 '10-10')."""
+    vals: list[str] = []
+    with _cache_lock:
+        payloads = list(_catalog_cache.values())
+    for payload in payloads:
+        for it in payload.get("items") or []:
+            cfg = it.get("cfg") or {}
+            if cfg.get("collection") != collection:
+                continue
+            for cand in (it.get("cto_groups") or []):
+                if cand.get("id") == "cpu_gpu" and dim.startswith("processor-"):
+                    vals.extend(str(o.get("value")) for o in cand.get("options") or [] if o.get("value"))
+            v = (cfg.get("params") or {}).get(dim)
+            if v:
+                vals.append(str(v))
+    return list(dict.fromkeys(vals))
 
 
 def _lookup_item(tier_key: str) -> dict[str, Any] | None:

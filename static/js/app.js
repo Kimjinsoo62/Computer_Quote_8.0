@@ -1196,6 +1196,13 @@ function renderLiveCto(data) {
       </div>`
     )
     .join("");
+  if (data.notice) {
+    // 고른 옵션을 이 모델에서 쓸 수 없어 이전 구성을 유지한 경우 안내
+    body.insertAdjacentHTML(
+      "afterbegin",
+      `<p class="cto-notice" style="margin:0 0 10px;padding:6px 8px;border:1px solid rgba(251,191,36,.4);background:rgba(251,191,36,.1);color:#fbbf24;border-radius:4px;">⚠️ ${escapeHtml(data.notice)}</p>`
+    );
+  }
   currentCtoOptions.forEach((grp) => {
     $(`#cto_select_${grp.id}`)?.addEventListener("change", () => refreshLiveCto(null, grp.id));
   });
