@@ -38,7 +38,8 @@ let gameWizardStep = 1;
 let lastGameQuery = null; // {games, titles, resolution}
 
 // 금액대로 찾기
-let lastPriceQuery = null; // {min_price, max_price} 원 단위
+let lastPriceQuery = null; // {min_price, max_price, type} 원 단위
+let priceTargetType = "assembled"; // 금액대로 찾기 대상: "assembled" | "notebook"
 let resultView = "card"; // "card" | "list"
 
 // CTO 관련 상태
@@ -642,6 +643,14 @@ function updateExtraButtonsVisibility() {
     // Apple 견적은 세부 단가를 사양으로만 표기하므로 단가 토글·마진이 의미 없다.
     hide(unitPriceBtn);
     hide(marginBtn);
+  } else if (currentCat === "price" && priceTargetType === "notebook") {
+    // 노트북 검색에는 모니터·키보드·세팅비·메모리 옵션이 적용되지 않는다.
+    hide(monitorBtn);
+    hide(keyboardBtn);
+    hide(setupBtn);
+    hide($("#btnRam32Toggle"));
+    show(unitPriceBtn);
+    show(marginBtn);
   } else {
     show(monitorBtn);
     show(keyboardBtn);
@@ -1802,10 +1811,16 @@ function applyResultView() {
   show($("#quoteTabs"));
 }
 
-let priceTargetType = "assembled";
+const PRICE_SCOPE_TEXT = {
+  assembled: "추천조립 · 아이웍스 · 프리미엄 전체를 판매가 기준으로 검색합니다.",
+  notebook: "컴퓨존 노트북 전체를 판매가 기준으로 검색합니다.",
+};
+
 function activatePriceSearch(targetType = "assembled") {
   priceTargetType = targetType;
   currentCat = "price";
+  const scope = $("#priceSearchScope");
+  if (scope) scope.textContent = PRICE_SCOPE_TEXT[targetType] || PRICE_SCOPE_TEXT.assembled;
   updateExtrasUI();
 
   hide($("#error"));
@@ -1852,7 +1867,7 @@ async function submitPriceSearch(opts = {}) {
   updateExtrasUI();
   $$(".cat-btn").forEach((b) => b.classList.remove("active"));
   $$(".game-cat-btn").forEach((b) => b.classList.remove("active"));
-  $$(".price-cat-btn").forEach((b) => b.classList.add("active"));
+  $$(".price-cat-btn").forEach((b) => b.classList.toggle("active", b.dataset.type === priceTargetType));
   show($("#priceSearchBar"));
   updateManwonPreview();
 
