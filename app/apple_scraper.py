@@ -834,6 +834,7 @@ CTO_LIVE_DIMS = {
     "ethernet_adapter-ethernetBandwidth": "이더넷",
     "power_adapter-wattage": "전원 어댑터",
 }
+SIZE_SORT_DIMS = {"memory-dimensionMemory", "storage-dimensionCapacity", "power_adapter-wattage"}
 _cfg_cache: dict[str, tuple[float, dict[str, Any]]] = {}
 
 
@@ -1031,7 +1032,11 @@ def fetch_apple_cto_live(
             label = _live_option_label(dim, val)
             opts.append({"value": str(val), "label": f"{label} (선택 시 계산)", "delta": None, "selected": False})
         if len(opts) >= 2:
-            opts.sort(key=lambda x: (x["delta"] is None, x["delta"] or 0, _dim_sort_key(x["value"])))
+            if dim in SIZE_SORT_DIMS:
+                # 메모리·저장장치·어댑터는 "(선택 시 계산)" 옵션도 섞어 용량순으로 보여 준다.
+                opts.sort(key=lambda x: _dim_sort_key(x["value"]))
+            else:
+                opts.sort(key=lambda x: (x["delta"] is None, x["delta"] or 0, _dim_sort_key(x["value"])))
             groups.append({"id": dim, "name": name, "options": opts})
 
     # 기본 모델에서는 API 가 칩 변경을 주지 않는 경우가 있다(예: MacBook Pro 14 M5).
