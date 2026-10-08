@@ -2012,12 +2012,8 @@ function showShutdownDonePage() {
     </div>`;
 }
 
+// 확인 팝업 없이 바로 종료
 async function shutdownApp() {
-  const ok = confirm(
-    "앱을 종료할까요?\n\n• 백엔드 서버 종료\n• 포트(8090/8091) 정리\n• Python/브라우저 캐시 삭제\n• 브라우저 창 닫기"
-  );
-  if (!ok) return;
-
   closeCalcWindow();
 
   const buttons = [$("#btnShutdown"), $("#btnShutdownNav")].filter(Boolean);
