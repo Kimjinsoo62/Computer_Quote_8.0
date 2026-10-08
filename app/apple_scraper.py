@@ -781,6 +781,15 @@ def _live_option_label(dim: str, value: str) -> str:
     return v
 
 
+def _dim_sort_key(value: str) -> float:
+    """'24gb', '2tb', '70w' 처럼 크기가 붙은 값을 크기순으로 정렬하기 위한 키."""
+    m = re.match(r"^(\d+(?:\.\d+)?)\s*(gb|tb|w)?", str(value or "").lower())
+    if not m:
+        return 0.0
+    n = float(m.group(1))
+    return n * 1024 if m.group(2) == "tb" else n
+
+
 def _price_of(body: dict[str, Any], key: Any) -> int | None:
     if not key:
         return None
@@ -794,8 +803,16 @@ def _price_of(body: dict[str, Any], key: Any) -> int | None:
 
 
 def _selected_values(body: dict[str, Any]) -> dict[str, str]:
+    """실제로 계산된 구성. selectedKits 가 기준이다(options 의 isSelected 는 요청값을 그대로 돌려줄 때가 있다)."""
     out: dict[str, str] = {}
+    kit_dims = (body.get("selectedKits") or {}).get("dimensions") or {}
+    for dim, info in kit_dims.items():
+        val = (info or {}).get("dimensionValue")
+        if val is not None:
+            out[dim] = str(val)
     for dim, o in (body.get("options") or {}).items():
+        if dim in out:
+            continue
         comp = o.get("compatibleOptions") or {}
         sel = next((k for k, v in comp.items() if v.get("isSelected")), None)
         sel = sel or next((k for k, v in comp.items() if v.get("isDefault")), None)
@@ -812,7 +829,9 @@ def _total_of(body: dict[str, Any]) -> int:
         return 0
 
 
-def fetch_apple_cto_live(tier_key: str, selections: dict[str, str] | None = None) -> dict[str, Any] | None:
+def fetch_apple_cto_live(
+    tier_key: str, selections: dict[str, str] | None = None, changed: str = ""
+) -> dict[str, Any] | None:
     """구성하기 API 로 현재 선택의 옵션·총액·추가 품목 행을 만든다. 쓸 수 없으면 None."""
     item = _lookup_item(str(tier_key or "").strip())
     cfg = (item or {}).get("cfg")
@@ -822,17 +841,43 @@ def fetch_apple_cto_live(tier_key: str, selections: dict[str, str] | None = None
     if not base:
         return None
     sel = {k: str(v) for k, v in (selections or {}).items() if k in CTO_LIVE_DIMS and v}
+    if sel:
+        # 일부 차원만 보내면 공식몰이 임의의 구성(예: 1TB·35W)을 고른다. 빠진 차원은 기본 구성 값으로 채운다.
+        base_fill = {d: v for d, v in _selected_values(base).items() if d in CTO_LIVE_DIMS}
+        sel = {**base_fill, **sel}
+    def _took(body: dict[str, Any] | None, req: dict[str, str]) -> bool:
+        # 공식몰은 불가능한 조합도 오류 없이 받고 다른 구성으로 계산할 때가 있다. 요청값이 실제 구성에 들어갔는지 본다.
+        if not body:
+            return False
+        got = _selected_values(body)
+        return all(got.get(d) == v for d, v in req.items())
+
     cur = _update_config(cfg, sel) if sel else base
+    if sel and not _took(cur, sel):
+        cur = None
     if not cur and sel:
         # 칩을 바꾸면 이전 메모리·저장장치 값이 그 칩에서 불가능할 수 있다(예: M5 Max 는 48GB 부터).
-        # 프로세서부터 하나씩 더해 보며 API 가 받아 주는 조합만 남긴다.
-        ordered = sorted(sel.items(), key=lambda kv: 0 if kv[0].startswith("processor-") else 1)
+        # 프로세서 → 방금 바꾼 항목 → 나머지 순으로 하나씩 더해 보며 API 가 받아 주는 조합만 남긴다.
+        # (방금 바꾼 항목이 예전 선택보다 먼저 들어가야, 충돌할 때 예전 선택이 빠진다)
+        ordered = sorted(
+            sel.items(),
+            key=lambda kv: 0 if kv[0].startswith("processor-") else (1 if kv[0] == changed else 2),
+        )
         accepted: dict[str, str] = {}
-        for dim, val in ordered:
-            trial = {**accepted, dim: val}
-            body = _update_config(cfg, trial)
-            if body:
-                accepted, cur = trial, body
+        pending = list(ordered)
+        # 앞 항목이 받아들여져야 가능한 값도 있어서(예: 10코어 GPU 를 먼저 골라야 24GB 가능) 진전이 없을 때까지 반복한다.
+        for _round in range(3):
+            rejected = []
+            for dim, val in pending:
+                trial = {**accepted, dim: val}
+                body = _update_config(cfg, trial)
+                if _took(body, trial):
+                    accepted, cur = trial, body
+                else:
+                    rejected.append((dim, val))
+            if not rejected or len(rejected) == len(pending):
+                break
+            pending = rejected
     if not cur:
         return None
 
@@ -860,8 +905,15 @@ def fetch_apple_cto_live(tier_key: str, selections: dict[str, str] | None = None
             else:
                 text = f"{label} ({'+' if delta > 0 else ''}{delta:,}원)"
             opts.append({"value": str(val), "label": text, "delta": delta, "selected": is_sel})
+        # upgradeOptions: 고르면 다른 구성도 함께 바뀌어야 하는 옵션(예: 30W 어댑터 모델의 메모리 업그레이드).
+        # 가격은 고른 뒤 API 가 계산한다.
+        for val, info in (o.get("upgradeOptions") or {}).items():
+            if info.get("isBlocked") or any(x["value"] == str(val) for x in opts):
+                continue
+            label = _live_option_label(dim, val)
+            opts.append({"value": str(val), "label": f"{label} (선택 시 계산)", "delta": None, "selected": False})
         if len(opts) >= 2:
-            opts.sort(key=lambda x: x["delta"])
+            opts.sort(key=lambda x: (x["delta"] is None, x["delta"] or 0, _dim_sort_key(x["value"])))
             groups.append({"id": dim, "name": name, "options": opts})
 
     # 기본 모델에서는 API 가 칩 변경을 주지 않는 경우가 있다(예: MacBook Pro 14 M5).

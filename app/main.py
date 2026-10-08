@@ -415,7 +415,7 @@ def api_apple_refresh(cat_key: str = "all"):
 
 
 @app.get("/api/apple/cto/{tier_key}")
-def api_apple_cto(tier_key: str, sel: str = ""):
+def api_apple_cto(tier_key: str, sel: str = "", changed: str = ""):
     """Mac 은 공식몰 구성하기 API 로 실시간 옵션·총액을(live), 그 외는 구매 페이지 비교 옵션을 준다.
     sel: 현재 선택 {차원: 값} JSON. 바뀔 때마다 다시 호출해 정확한 총액을 받는다."""
     selections: dict = {}
@@ -426,7 +426,7 @@ def api_apple_cto(tier_key: str, sel: str = ""):
                 selections = {str(k): str(v) for k, v in parsed.items()}
         except ValueError:
             selections = {}
-    live = fetch_apple_cto_live(tier_key, selections)
+    live = fetch_apple_cto_live(tier_key, selections, changed)
     if live:
         return {
             "tier_key": tier_key,

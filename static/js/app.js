@@ -1199,7 +1199,7 @@ function renderLiveCto(data) {
     )
     .join("");
   currentCtoOptions.forEach((grp) => {
-    $(`#cto_select_${grp.id}`)?.addEventListener("change", () => refreshLiveCto());
+    $(`#cto_select_${grp.id}`)?.addEventListener("change", () => refreshLiveCto(null, grp.id));
   });
   showLiveCtoTotal();
 }
@@ -1211,7 +1211,7 @@ function showLiveCtoTotal() {
   $("#ctoTotalPrice").textContent = fmt((ctoLive.total || 0) + extra);
 }
 
-async function refreshLiveCto(selections) {
+async function refreshLiveCto(selections, changed = "") {
   if (!ctoLive) return;
   const sel = selections || {};
   if (!selections) {
@@ -1223,7 +1223,9 @@ async function refreshLiveCto(selections) {
   $("#ctoTotalPrice").textContent = "계산 중…";
   $$(".cto-select").forEach((el) => (el.disabled = true));
   try {
-    const res = await fetch(`/api/apple/cto/${encodeURIComponent(activeCtoTierKey)}?sel=${encodeURIComponent(JSON.stringify(sel))}`);
+    const res = await fetch(
+      `/api/apple/cto/${encodeURIComponent(activeCtoTierKey)}?sel=${encodeURIComponent(JSON.stringify(sel))}&changed=${encodeURIComponent(changed)}`
+    );
     const data = await res.json();
     if (!data.live) throw new Error("구성 가격을 받지 못했습니다.");
     renderLiveCto(data);
