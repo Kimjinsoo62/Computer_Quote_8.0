@@ -460,8 +460,26 @@ def _pick_representatives(
         cfg = None
         if collection and best.get("cfg_params"):
             cfg = {"collection": collection, "params": dict(best["cfg_params"])}
+            best = _apply_base_config_specs(best, cfg)
         picked.append(_finalize_item(best, fam, cto_groups=_build_live_cto(best, rows), cfg=cfg))
     return picked
+
+
+def _apply_base_config_specs(item: dict[str, Any], cfg: dict[str, Any]) -> dict[str, Any]:
+    """구매 페이지에는 기본 메모리·SSD 가 없어 최소 용량으로 적히는 모델이 있다(예: Mac mini M5 Pro 는 24GB·512GB).
+    구성하기 API 의 기본 구성으로 사양 표기를 바로잡는다. 실패하면 그대로 둔다."""
+    base = _update_config(cfg, {})
+    if not base:
+        return item
+    sel = _selected_values(base)
+    specs = dict(item.get("specs") or {})
+    mem = sel.get("memory-dimensionMemory")
+    if mem:
+        specs["memory"] = _human_dim("memory", mem).replace(" 통합 메모리", "")
+    sto = sel.get("storage-dimensionCapacity")
+    if sto:
+        specs["storage"] = _human_dim("storage", sto)
+    return {**item, "specs": specs}
 
 
 def _pick_best(rows: list[dict[str, Any]]) -> dict[str, Any] | None:
