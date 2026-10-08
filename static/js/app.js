@@ -592,7 +592,24 @@ function excelQueryParams(index = -1) {
     params.set("price_type", lastPriceQuery.type || "assembled");
   }
   if (index >= 0) params.set("index", String(index));
+  const cto = ctoUpgradesForExcel(index);
+  if (cto) params.set("cto", cto);
   return params.toString();
+}
+
+/** 화면에서 적용한 Apple CTO 추가 품목을 {tier_key: [{category, name, amount}]} JSON 으로 만든다. */
+function ctoUpgradesForExcel(index = -1) {
+  const quotes = quoteData?.quotes || [];
+  const picked = index >= 0 ? [quotes[index]] : quotes;
+  const map = {};
+  picked.forEach((q) => {
+    const orig = q?._ctoOriginal;
+    if (!orig || !q.tier_key) return;
+    const added = (q.parts || []).slice((orig.parts || []).length);
+    if (!added.length) return;
+    map[q.tier_key] = added.map((p) => ({ category: p.category, name: p.name, amount: p.amount }));
+  });
+  return Object.keys(map).length ? JSON.stringify(map) : "";
 }
 
 /** 카드 한 건만 견적서로 내려받는다. 상단 버튼(전체)은 그대로 둔다. */
@@ -2198,7 +2215,8 @@ $("#btnUpdateApp")?.addEventListener("click", updateApp);
 
 $("#btnDownloadExcel")?.addEventListener("click", (e) => {
   e.preventDefault();
-  downloadWithBusy(e.currentTarget.href, {}, "견적서.xlsx", "견적서 Excel 생성 중…");
+  // href 는 CTO 적용 전 값일 수 있으므로 누를 때 다시 만든다.
+  downloadWithBusy(`/api/download/excel?${excelQueryParams()}`, {}, "견적서.xlsx", "견적서 Excel 생성 중…");
 });
 
 // ==========================================================================

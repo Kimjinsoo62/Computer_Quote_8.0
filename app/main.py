@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import json
 import socket
 from dataclasses import replace
 from datetime import date
@@ -24,6 +25,7 @@ from app.apple_scraper import fetch_apple_cto_options
 from app.used_market import used_market_links
 from app.quote_info import load_quote_info, reset_quote_info, save_quote_info
 from app.quote_engine import (
+    QuotePart,
     apply_manwon_rounding,
     apply_quote_margin,
     fetch_apple_quotes,
@@ -422,6 +424,54 @@ def api_apple_cto(tier_key: str):
     }
 
 
+def _apply_cto_upgrades(result, cto_json: str):
+    """화면에서 적용한 CTO 추가 품목({tier_key: [{category, name, amount}]})을 견적에 더한다."""
+    try:
+        upgrades = json.loads(cto_json)
+    except (TypeError, ValueError) as e:
+        raise HTTPException(status_code=400, detail="CTO 정보 형식이 올바르지 않습니다.") from e
+    if not isinstance(upgrades, dict):
+        raise HTTPException(status_code=400, detail="CTO 정보 형식이 올바르지 않습니다.")
+
+    quotes = []
+    for q in result.quotes:
+        added = upgrades.get(q.tier_key)
+        if not isinstance(added, list) or not added:
+            quotes.append(q)
+            continue
+        parts = list(q.parts)
+        for item in added[:20]:
+            if not isinstance(item, dict):
+                continue
+            try:
+                amount = int(item.get("amount") or 0)
+            except (TypeError, ValueError):
+                continue
+            if not amount:
+                continue
+            parts.append(
+                QuotePart(
+                    no=len(parts) + 1,
+                    category=str(item.get("category") or "CTO")[:40],
+                    name=str(item.get("name") or "CTO 업그레이드")[:120],
+                    qty=1,
+                    unit_price=amount,
+                    amount=amount,
+                )
+            )
+        delta = sum(p.amount for p in parts[len(q.parts):])
+        quotes.append(
+            replace(
+                q,
+                parts=parts,
+                total=q.total + delta,
+                parts_subtotal=q.parts_subtotal + delta,
+                price_source="apple_cto",
+            )
+        )
+    return replace(result, quotes=quotes)
+
+
 @app.get("/api/download/excel")
 def download_excel(
     cat: str = "ai",
@@ -438,6 +488,7 @@ def download_excel(
     max_price: int = 0,
     price_type: str = "assembled",
     index: int = -1,
+    cto: str = "",
 ):
     """index 를 주면 해당 카드 한 건만, 없으면 카테고리 전체를 내려준다."""
     include_monitor = bool(monitor)
@@ -525,6 +576,9 @@ def download_excel(
         kr_label = f"Apple_{cat_name}_견적"
     else:
         raise HTTPException(status_code=404, detail=f"Unknown category: {cat}")
+
+    if is_apple and cto:
+        result = _apply_cto_upgrades(result, cto)
 
     apple_sub = cat.replace("apple_", "") if is_apple and cat != "apple" else ("macbook" if cat == "apple" else "")
     # 노트북은 모니터·키보드·세팅비·메모리 옵션이 적용되지 않으므로 파일명에도 붙이지 않는다.
