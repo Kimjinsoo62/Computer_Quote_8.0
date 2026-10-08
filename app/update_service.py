@@ -9,6 +9,10 @@ from pathlib import Path
 BASE_DIR = Path(__file__).resolve().parent.parent
 _NO_WINDOW = getattr(subprocess, "CREATE_NO_WINDOW", 0)
 
+# GitHub 저장소 이름이 바뀌면 예전 이름을 여기에 추가한다.
+REPO_NAME = "Computer_Quote_X.15"
+OLD_REPO_NAMES = ("Computer_Quote_9.0",)
+
 
 def _git(*args: str, timeout: int = 60) -> subprocess.CompletedProcess:
     return subprocess.run(
@@ -28,11 +32,24 @@ def _upstream() -> str:
     return r.stdout.strip() if r.returncode == 0 and r.stdout.strip() else "origin/main"
 
 
+def _migrate_remote(remote: str) -> None:
+    """원격 주소가 예전 저장소 이름이면 새 이름으로 바꾼다(GitHub 리다이렉트에 기대지 않도록)."""
+    url = _git("remote", "get-url", remote).stdout.strip()
+    for old in OLD_REPO_NAMES:
+        for suffix in (".git", ""):
+            tail = f"/{old}{suffix}"
+            if url.lower().endswith(tail.lower()):
+                new_url = url[: -len(tail)] + f"/{REPO_NAME}{suffix}"
+                _git("remote", "set-url", remote, new_url)
+                return
+
+
 def check_update() -> dict:
     """원격 저장소를 fetch 해 받을 커밋이 있는지 알려 준다."""
     try:
         upstream = _upstream()
         remote = upstream.split("/", 1)[0]
+        _migrate_remote(remote)
         f = _git("fetch", remote, timeout=90)
         if f.returncode != 0:
             return {"ok": False, "message": "원격 저장소 확인 실패:\n" + (f.stderr or f.stdout).strip()}
@@ -57,6 +74,7 @@ def apply_update() -> dict:
     try:
         upstream = _upstream()
         remote, branch = upstream.split("/", 1)
+        _migrate_remote(remote)
         before = _git("rev-parse", "HEAD").stdout.strip()
         p = _git("pull", "--ff-only", remote, branch, timeout=180)
         output = (p.stdout + p.stderr).strip()
