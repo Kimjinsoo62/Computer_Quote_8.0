@@ -196,6 +196,52 @@ function hide(el) {
   el.setAttribute("aria-hidden", "true");
 }
 
+// 우측 하단 작은 처리 상태 창 (Excel 생성·CTO 옵션·시세 검색·업데이트 대기 등)
+let busyDepth = 0;
+function showBusy(text) {
+  busyDepth += 1;
+  const t = $("#busyText");
+  if (t) t.textContent = text;
+  show($("#busyBox"));
+}
+function setBusyText(text) {
+  const t = $("#busyText");
+  if (t) t.textContent = text;
+}
+function hideBusy() {
+  busyDepth = Math.max(0, busyDepth - 1);
+  if (!busyDepth) hide($("#busyBox"));
+}
+
+/** 서버에서 파일을 받아 저장. 생성하는 동안 처리 상태 창을 보여 준다. */
+async function downloadWithBusy(url, options = {}, fallbackName = "download.xlsx", label = "Excel 파일 생성 중…") {
+  showBusy(label);
+  try {
+    const res = await fetch(url, options);
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || `파일 생성 실패 (${res.status})`);
+    }
+    const cd = res.headers.get("Content-Disposition") || "";
+    const star = cd.match(/filename\*=UTF-8''([^;]+)/i);
+    const plain = cd.match(/filename="([^"]+)"/i);
+    const name = star ? decodeURIComponent(star[1]) : plain ? plain[1] : fallbackName;
+    const blob = await res.blob();
+    const href = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = href;
+    a.download = name;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(href), 1000);
+  } catch (e) {
+    alert("다운로드 오류: " + e.message);
+  } finally {
+    hideBusy();
+  }
+}
+
 function openCoupangSearch(keyword, event) {
   if (event) {
     event.preventDefault();
@@ -257,6 +303,7 @@ async function openUsedMarketDirect(source, market, event) {
   }
   if (!model && !cpu && !gpu) return;
   let links = fallbackUsedLinks(model, cpu, gpu);
+  showBusy("중고 시세 검색어 준비 중…");
   try {
     const params = new URLSearchParams();
     if (model) params.set("q", model);
@@ -273,6 +320,8 @@ async function openUsedMarketDirect(source, market, event) {
     }
   } catch (_) {
     /* 키워드 API 실패 시 CPU/그래픽카드로 만든 검색어를 그대로 쓴다 */
+  } finally {
+    hideBusy();
   }
   const url = market === "joongna" ? links.joongna_url : links.bunjang_url;
   if (url) window.open(url, "_blank", "noopener,noreferrer");
@@ -546,7 +595,7 @@ function excelQueryParams(index = -1) {
 
 /** 카드 한 건만 견적서로 내려받는다. 상단 버튼(전체)은 그대로 둔다. */
 function downloadOneExcel(index) {
-  window.location.href = `/api/download/excel?${excelQueryParams(index)}`;
+  downloadWithBusy(`/api/download/excel?${excelQueryParams(index)}`, {}, "견적서.xlsx", "견적서 Excel 생성 중…");
 }
 
 /** 모니터·무선키보드 공통 표시: "{이름} (포함됨|제외됨)" */
@@ -1038,11 +1087,12 @@ async function openCtoModal(idx, tierKey) {
   if (infoEl) {
     infoEl.innerHTML = `
       <h4 style="margin:0 0 4px 0; font-size:1.05rem; color:var(--text); font-weight:700;">${baseQ.model}</h4>
-      <p style="margin:0; font-size:0.85rem; color:var(--muted);">${baseQ.description}</p>
+      <p style="margin:0; font-size:1rem; color:var(--muted);">${baseQ.description}</p>
     `;
   }
 
-    try {
+  showBusy("CTO 사양 옵션 불러오는 중…");
+  try {
     const res = await fetch(`/api/apple/cto/${encodeURIComponent(tierKey)}`);
     const data = await res.json();
     currentCtoOptions = data.options || [];
@@ -1086,6 +1136,8 @@ async function openCtoModal(idx, tierKey) {
     show(ctoModal);
   } catch (e) {
     alert("CTO 옵션 정보를 가져오는데 실패했습니다: " + e.message);
+  } finally {
+    hideBusy();
   }
 }
 
@@ -1884,7 +1936,6 @@ $("#btnResultViewToggle")?.addEventListener("click", () => {
 });
 
 document.addEventListener("DOMContentLoaded", () => {
-  initCoupangSetup();
   initNetworkModal();
   updateExtrasUI();
   loadQuoteInfo();
@@ -2023,6 +2074,7 @@ async function updateApp() {
 function reloadWhenServerBack() {
   const startedAt = Date.now();
   let wentDown = false;
+  showBusy("업데이트 진행 중… 서버 재시작 대기");
   const timer = setInterval(async () => {
     let up = false;
     try {
@@ -2033,6 +2085,8 @@ function reloadWhenServerBack() {
     }
     if (!up) wentDown = true;
     const elapsed = Date.now() - startedAt;
+    const sec = Math.round(elapsed / 1000);
+    setBusyText(wentDown ? `업데이트 진행 중… 다운로드·설치 후 재시작 대기 (${sec}초)` : `업데이트 시작 중… (${sec}초)`);
     // 기존 서버가 내려간 뒤 다시 올라왔거나, 3분이 지나면 새로고침
     if ((wentDown && up) || elapsed > 180000) {
       clearInterval(timer);
@@ -2042,6 +2096,11 @@ function reloadWhenServerBack() {
 }
 
 $("#btnUpdateApp")?.addEventListener("click", updateApp);
+
+$("#btnDownloadExcel")?.addEventListener("click", (e) => {
+  e.preventDefault();
+  downloadWithBusy(e.currentTarget.href, {}, "견적서.xlsx", "견적서 Excel 생성 중…");
+});
 
 // ==========================================================================
 // 📋 컴퓨터 작업내역서 (Task Report) 프론트엔드 컨트롤러
@@ -2432,7 +2491,7 @@ window.deleteTrReportItem = async function(id) {
 };
 
 window.downloadTrExcelById = function(id) {
-  window.location.href = `/api/task-reports/${id}/download/excel`;
+  downloadWithBusy(`/api/task-reports/${id}/download/excel`, {}, "작업내역서.xlsx", "작업내역서 Excel 생성 중…");
 };
 
 // 저장
@@ -2483,27 +2542,14 @@ function printTrPaper() {
 // 실시간 엑셀 다운로드
 async function downloadTrExcelDirect() {
   const data = getTrFormData();
-  try {
-    const res = await fetch("/api/task-reports/download/excel", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data),
-    });
-    if (!res.ok) throw new Error("엑셀 생성 실패");
-    const blob = await res.blob();
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    const custName = data.customer_name || "고객";
-    const docNo = data.doc_no || "01";
-    a.download = `작업내역서_${custName}_${docNo}.xlsx`;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    window.URL.revokeObjectURL(url);
-  } catch (e) {
-    alert("엑셀 다운로드 오류: " + e.message);
-  }
+  const custName = data.customer_name || "고객";
+  const docNo = data.doc_no || "01";
+  await downloadWithBusy(
+    "/api/task-reports/download/excel",
+    { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) },
+    `작업내역서_${custName}_${docNo}.xlsx`,
+    "작업내역서 Excel 생성 중…"
+  );
 }
 
 // 이벤트 바인딩

@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/static/css/style.css?v=20260911i" />
+  <link rel="stylesheet" href="/static/css/style.css?v=20261008b" />
 </head>
 <body>
   <nav class="nav">
@@ -348,7 +348,7 @@
         <button type="button" class="modal-close btn-modal-close" id="networkModalClose" aria-label="닫기">✕ 닫기</button>
       </div>
       <div class="modal-body">
-        <p style="margin-top: 0; color: var(--muted); font-size: 0.9rem;">
+        <p style="margin-top: 0; color: var(--muted); font-size: 1rem;">
           이 컴퓨터(호스트)는 물론, 동일한 공유기(Wi-Fi 또는 유선 LAN)에 연결된 다른 컴퓨터나 노트북, 스마트폰에서도 아래 주소를 통해 실시간으로 접속하여 함께 작업할 수 있습니다.
         </p>
 
@@ -678,6 +678,11 @@
     </div>
   </div>
 
-  <script src="/static/js/app.js?v=20260911j"></script>
+  <div id="busyBox" class="busy-box hidden" role="status" aria-live="polite" aria-hidden="true">
+    <div class="spinner spinner-sm"></div>
+    <span id="busyText">처리 중…</span>
+  </div>
+
+  <script src="/static/js/app.js?v=20261008b"></script>
 </body>
 </html>
