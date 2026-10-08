@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>사용설명서 — 컴퓨존 견적 자동화 Ver X.15</title>
+  <title>사용설명서 — 컴퓨존 견적 자동화 Ver X.16</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
@@ -87,7 +87,7 @@
       <div class="nav-brand">
         <a href="/" class="logo">
           <span class="logo-icon">⚡</span>
-          <span>컴퓨존 <strong>견적 자동화 Ver X.15</strong></span>
+          <span>컴퓨존 <strong>견적 자동화 Ver X.16</strong></span>
         </a>
       </div>
       <div class="nav-links">
@@ -99,10 +99,17 @@
   <div class="manual-wrap">
     <div class="manual-head">
       <h1>📖 사용설명서</h1>
-      <p>컴퓨존(Compuzone) 조립PC 및 Apple Store 공식몰의 실시간 견적을 자동 수집하고, 단가 조절 · 부가세 계산 · 중고 시세 검색 · 네트워크 다중 접속 · 작업내역서 작성 · 8종 Excel 견적서 발행을 지원하는 통합 업무 솔루션입니다. <strong>Ver X.15</strong></p>
+      <p>컴퓨존(Compuzone) 조립PC 및 Apple Store 공식몰의 실시간 견적을 자동 수집하고, 단가 조절 · 부가세 계산 · 중고 시세 검색 · 네트워크 다중 접속 · 작업내역서 작성 · 8종 Excel 견적서 발행을 지원하는 통합 업무 솔루션입니다. <strong>Ver X.16</strong></p>
 
       <div class="manual-note">
-        <strong>🆕 Ver X.15 주요 신규 및 개선 기능</strong>
+        <strong>🆕 Ver X.16 주요 변경</strong>
+        <ul>
+          <li><strong>🔗 저장소 이름 변경 대응</strong>: GitHub 저장소 이름이 프로그램 버전과 같아졌습니다(Computer_Quote_X.16). 이전 버전에서 [업데이트] 버튼이나 <span class="manual-key">update.bat</span>으로 업데이트하면 저장소 주소가 자동으로 새 이름으로 바뀝니다. (<a href="#s1">1번 항목</a>)</li>
+        </ul>
+      </div>
+
+      <div class="manual-note">
+        <strong>Ver X.15 주요 신규 및 개선 기능</strong>
         <ul>
           <li><strong>🔄 [업데이트] 버튼</strong>: GitHub에 새 버전이 있는지 확인해 팝업으로 알려 주고, 승인하면 내려받은 뒤 재시작 여부를 묻습니다. (<a href="#s1">1번 항목</a>)</li>
           <li><strong>✕ [종료] 개선</strong>: 확인 없이 바로 캐시 삭제 → 화면 새로고침 → 서버·포트 정리 → 창 닫기를 수행하며, 견적을 불러오는 중에도 즉시 종료됩니다.</li>
@@ -183,11 +190,11 @@
         </tr>
         <tr>
           <td><strong>🔄 업데이트</strong></td>
-          <td>GitHub에 새 버전이 있는지 확인해 팝업으로 알려 줍니다(없으면 "최신 버전"). 변경 목록을 보고 <strong>승인</strong>하면 내려받아(git pull) 프로젝트를 갱신하고, 완료 후 <strong>재시작</strong> 여부를 묻습니다. 재시작을 누르면 구성요소를 확인한 뒤 서버가 다시 켜지고 화면이 자동으로 새로고침됩니다. 이 PC에서 프로그램 파일을 직접 수정했다면 업데이트가 실패할 수 있습니다. GitHub 저장소 이름이 바뀐 경우(예: Computer_Quote_9.0 → Computer_Quote_X.15)에도 업데이트 시 저장소 주소가 자동으로 새 이름으로 바뀝니다.</td>
+          <td>GitHub에 새 버전이 있는지 확인해 팝업으로 알려 줍니다(없으면 "최신 버전"). 변경 목록을 보고 <strong>승인</strong>하면 내려받아(git pull) 프로젝트를 갱신하고, 완료 후 <strong>재시작</strong> 여부를 묻습니다. 재시작을 누르면 구성요소를 확인한 뒤 서버가 다시 켜지고 화면이 자동으로 새로고침됩니다. 이 PC에서 프로그램 파일을 직접 수정했다면 업데이트가 실패할 수 있습니다. GitHub 저장소 이름이 바뀐 경우(예: Computer_Quote_9.0, Computer_Quote_X.15 → Computer_Quote_X.16)에도 업데이트 시 저장소 주소가 자동으로 새 이름으로 바뀝니다.</td>
         </tr>
         <tr>
           <td><span class="manual-key">update.bat</span></td>
-          <td>화면을 열 수 없을 때 직접 실행하는 수동 업데이트입니다. 서버를 끄고 GitHub에서 내려받은 뒤 구성요소를 확인하고 다시 시작합니다. 내려받기 전에 저장소 주소가 예전 이름(Computer_Quote_9.0)이면 새 이름(Computer_Quote_X.15)으로 자동으로 바꿉니다(콘솔에 "Repository renamed" 표시).</td>
+          <td>화면을 열 수 없을 때 직접 실행하는 수동 업데이트입니다. 서버를 끄고 GitHub에서 내려받은 뒤 구성요소를 확인하고 다시 시작합니다. 내려받기 전에 저장소 주소가 예전 이름(Computer_Quote_9.0, Computer_Quote_X.15)이면 새 이름(Computer_Quote_X.16)으로 자동으로 바꿉니다(콘솔에 "Repository renamed" 표시).</td>
         </tr>
         <tr>
           <td><span class="manual-key">stop.bat</span></td>
@@ -579,7 +586,7 @@
     </section>
 
     <div class="manual-footer">
-      <p>컴퓨존 견적 자동화 Ver X.15 · 개발 애플아저씨 · 기술 지원 및 문의 <a href="mailto:jskimjskim@gmail.com">jskimjskim@gmail.com</a></p>
+      <p>컴퓨존 견적 자동화 Ver X.16 · 개발 애플아저씨 · 기술 지원 및 문의 <a href="mailto:jskimjskim@gmail.com">jskimjskim@gmail.com</a></p>
       <p>본 프로그램은 컴퓨존 및 Apple 공식 스토어의 실시간 정보를 바탕으로 작동하며, 가격 및 프로모션은 공식 홈페이지 기준에 따릅니다.</p>
     </div>
   </div>

@@ -10,8 +10,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 _NO_WINDOW = getattr(subprocess, "CREATE_NO_WINDOW", 0)
 
 # GitHub 저장소 이름이 바뀌면 예전 이름을 여기에 추가한다.
-REPO_NAME = "Computer_Quote_X.15"
-OLD_REPO_NAMES = ("Computer_Quote_9.0",)
+REPO_NAME = "Computer_Quote_X.16"
+OLD_REPO_NAMES = ("Computer_Quote_9.0", "Computer_Quote_X.15")
 
 
 def _git(*args: str, timeout: int = 60) -> subprocess.CompletedProcess:

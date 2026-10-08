@@ -57,7 +57,8 @@ REM Repository was renamed on GitHub: point origin at the new name
 set "url="
 for /f "delims=" %%u in ('git remote get-url origin 2^>nul') do set "url=%%u"
 if not defined url goto :eof
-set "newurl=!url:/Computer_Quote_9.0=/Computer_Quote_X.15!"
+set "newurl=!url:/Computer_Quote_9.0=/Computer_Quote_X.16!"
+set "newurl=!newurl:/Computer_Quote_X.15=/Computer_Quote_X.16!"
 if not "!newurl!"=="!url!" (
     echo Repository renamed - switching remote to !newurl!
     git remote set-url origin "!newurl!"
