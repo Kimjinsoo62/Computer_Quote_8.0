@@ -559,6 +559,8 @@ def download_excel(
         model_head = (picked.model or "").split("(")[0].strip()
         for ch in '\\/:*?"<>|':
             model_head = model_head.replace(ch, " ")
+        # "6코어 CPU / 5코어 GPU" 처럼 / 를 지우면 공백이 겹치므로 하나로 줄인다.
+        model_head = " ".join(model_head.split())
         name_parts = [
             p for p in ((picked.tab_label or picked.tier or "").strip(), model_head) if p
         ]

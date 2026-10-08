@@ -718,7 +718,8 @@ function toggleExtraAndReload(kind) {
   } else if (currentCat === "price" && lastPriceQuery) {
     submitPriceSearch({ keepView: true });
   } else {
-    fetchQuotes(currentCat);
+    // Apple 세팅비 토글처럼 같은 목록을 다시 불러올 때 적용해 둔 CTO 구성을 유지한다.
+    fetchQuotes(currentCat, false, { ctoCarry: snapshotCto(quoteData?.quotes) });
   }
 }
 
@@ -1224,6 +1225,36 @@ function applyCtoChanges() {
   renderDetail(quoteData.quotes);
 }
 
+/** 적용된 CTO(추가 부품·추가 금액)를 tier_key 별로 기억해 둔다. 옵션 토글로 다시 불러올 때 쓴다. */
+function snapshotCto(quotes) {
+  const carry = {};
+  (quotes || []).forEach((q) => {
+    const orig = q._ctoOriginal;
+    if (!orig || !q.tier_key) return;
+    const delta = (q.total || 0) - (orig.total || 0);
+    if (!delta) return;
+    carry[q.tier_key] = {
+      delta,
+      parts: JSON.parse(JSON.stringify((q.parts || []).slice((orig.parts || []).length))),
+      priceSource: q.price_source,
+    };
+  });
+  return carry;
+}
+
+/** 새로 불러온 견적에 기억해 둔 CTO 를 다시 얹는다. */
+function reapplyCto(quotes, carry) {
+  (quotes || []).forEach((q) => {
+    const c = carry[q.tier_key];
+    if (!c) return;
+    q._ctoOriginal = JSON.parse(JSON.stringify(q));
+    q.parts = q.parts || [];
+    c.parts.forEach((p) => q.parts.push({ ...p, no: q.parts.length + 1 }));
+    q.total = (q.total || 0) + c.delta;
+    q.price_source = c.priceSource || "apple_cto";
+  });
+}
+
 function closeCtoModal() {
   if (!ctoModal) return;
   hide(ctoModal);
@@ -1252,20 +1283,25 @@ function switchStore(store) {
   const groupApple = $("#appleCatGroup");
   hidePriceResultChrome();
   updateEmptyStateCopy();
+  // 자동으로 여는 첫 카테고리 버튼을 선택 상태로 표시한다.
+  const firstCat = store === "compuzone" ? "ai" : "apple_macbook";
+  $$(".cat-btn, .game-cat-btn, .price-cat-btn, .apple-cat-btn").forEach((b) =>
+    b.classList.toggle("active", b.dataset.cat === firstCat)
+  );
   if (store === "compuzone") {
     btnCompuzone?.classList.add("active");
     btnApple?.classList.remove("active");
     show(groupCompuzone);
     hide(groupApple);
     updateExtrasUI();
-    fetchQuotes("ai");
+    fetchQuotes(firstCat);
   } else {
     btnApple?.classList.add("active");
     btnCompuzone?.classList.remove("active");
     show(groupApple);
     hide(groupCompuzone);
     updateExtrasUI();
-    fetchQuotes("apple_macbook");
+    fetchQuotes(firstCat);
   }
 }
 
@@ -1352,7 +1388,7 @@ function applyQuotePayload(data) {
   updateExtrasUI();
 }
 
-async function fetchQuotes(cat = "ai", forceRefresh = false) {
+async function fetchQuotes(cat = "ai", forceRefresh = false, opts = {}) {
   if (cat === "game-pc" || cat === "game") {
     openGamePcModal();
     return;
@@ -1409,6 +1445,7 @@ async function fetchQuotes(cat = "ai", forceRefresh = false) {
       return;
     }
 
+    if (opts.ctoCarry) reapplyCto(quoteData.quotes, opts.ctoCarry);
     applyQuotePayload(quoteData);
   } catch (e) {
     hide(loading);
