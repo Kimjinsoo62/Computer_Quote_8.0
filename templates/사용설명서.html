@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>사용설명서 — 컴퓨존 견적 자동화 Ver 9.0</title>
+  <title>사용설명서 — 컴퓨존 견적 자동화 Ver X.15</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
@@ -87,7 +87,7 @@
       <div class="nav-brand">
         <a href="/" class="logo">
           <span class="logo-icon">⚡</span>
-          <span>컴퓨존 <strong>견적 자동화 Ver 9.0</strong></span>
+          <span>컴퓨존 <strong>견적 자동화 Ver X.15</strong></span>
         </a>
       </div>
       <div class="nav-links">
@@ -99,14 +99,28 @@
   <div class="manual-wrap">
     <div class="manual-head">
       <h1>📖 사용설명서</h1>
-      <p>컴퓨존(Compuzone) 조립PC 및 Apple Store 공식몰의 실시간 견적을 자동 수집하고, 단가 조절 · 부가세 계산 · 중고 시세 검색 · 네트워크 다중 접속 · 작업내역서 작성 · 8종 Excel 견적서 발행을 지원하는 통합 업무 솔루션입니다. <strong>Ver 9.0</strong></p>
+      <p>컴퓨존(Compuzone) 조립PC 및 Apple Store 공식몰의 실시간 견적을 자동 수집하고, 단가 조절 · 부가세 계산 · 중고 시세 검색 · 네트워크 다중 접속 · 작업내역서 작성 · 8종 Excel 견적서 발행을 지원하는 통합 업무 솔루션입니다. <strong>Ver X.15</strong></p>
 
       <div class="manual-note">
-        <strong>🔥 Ver 9.0 주요 신규 및 개선 기능</strong>
+        <strong>🆕 Ver X.15 주요 신규 및 개선 기능</strong>
+        <ul>
+          <li><strong>🔄 [업데이트] 버튼</strong>: GitHub에 새 버전이 있는지 확인해 팝업으로 알려 주고, 승인하면 내려받은 뒤 재시작 여부를 묻습니다. (<a href="#s1">1번 항목</a>)</li>
+          <li><strong>✕ [종료] 개선</strong>: 확인 없이 바로 캐시 삭제 → 화면 새로고침 → 서버·포트 정리 → 창 닫기를 수행하며, 견적을 불러오는 중에도 즉시 종료됩니다.</li>
+          <li><strong>🍎 Mac 실시간 CTO(구성하기)</strong>: 애플 공식몰 '구성하기'와 같은 가격으로 메모리·SSD·칩·디스플레이·이더넷·어댑터를 계산합니다. 칩을 바꾸면 함께 바뀌는 최소 사양과 "(선택 시 계산)" 옵션도 공식몰과 똑같이 처리합니다. (<a href="#s8">8번 항목</a>)</li>
+          <li><strong>📥 CTO 견적 Excel 반영</strong>: 적용한 CTO가 Excel(전체·카드별)에 들어가며, 메모리·SSD·칩은 기본 사양 행이 업그레이드 사양으로 바뀝니다.</li>
+          <li><strong>📐 Mac 기본 사양 보정</strong>: 구매 페이지에 없는 기본 메모리·SSD를 공식몰 구성 정보로 바로잡습니다(예: Mac mini M5 Pro 24GB·512GB).</li>
+          <li><strong>⚠️ 공식몰 수집 상태 점검</strong>: 애플 페이지 개편·접속 실패·새 제품군을 노란색 경고와 로그로 알려 줍니다.</li>
+          <li><strong>🖼️ 대표 이미지</strong>: 모든 카드에 [이미지] 버튼이 생기고, 상세 견적서 하단에 원본 페이지 대표 이미지가 표시됩니다. (<a href="#s4">4번 항목</a>)</li>
+          <li><strong>💻 노트북 금액대로 찾기 개선</strong>: 노트북 Excel이 노트북 견적으로 나오고, 안내 문구·버튼·옵션 표시가 노트북에 맞게 바뀝니다.</li>
+          <li><strong>기타</strong>: 폼7·폼8의 고정 계좌번호·성경 구절 제거, Esc 키로 모든 창 닫기, 사용설명서 전면 갱신.</li>
+        </ul>
+      </div>
+
+      <div class="manual-note">
+        <strong>Ver 9.0 주요 기능</strong>
         <ul>
           <li><strong>🌐 네트워크(LAN IP) 다중 기기 동시 작업 지원</strong>: 프로그램 실행 PC뿐 아니라 같은 네트워크(공유기) 내의 다른 컴퓨터, 노트북, 태블릿, 스마트폰에서도 <code>http://[서버IP]:8090</code> 주소로 접속해 동시에 견적 및 내역서 작성이 가능합니다. 상단 메뉴의 <span class="manual-badge-blue">🌐 네트워크 접속</span> 버튼을 누르면 접속 안내 창이 열리고 📋 복사 버튼으로 주소를 복사할 수 있습니다.</li>
           <li><strong>🍎 Apple Store 공식몰 실시간 동기화</strong>: 과거 하드코딩 모델을 없애고, 현재 애플 공식 스토어에서 판매 중인 라인업을 실시간으로 수집·노출합니다. 공식몰 접속에 실패할 때만 마지막으로 저장된 스냅샷을 보여 주며 <code>● Apple 공식몰 스냅샷</code> 배지로 구분됩니다. <span class="manual-badge-red">🔄 공홈 실시간 새로고침</span> 버튼으로 언제든 다시 가져올 수 있습니다.</li>
-          <li><strong>🔄 업데이트 · ✕ 종료</strong>: [업데이트]는 GitHub에서 새 버전을 확인해 승인 후 갱신하고 재시작을 안내합니다. [종료]는 확인 없이 바로 서버 종료 · 포트 정리 · 캐시 삭제 · 창 닫기를 수행합니다.</li>
           <li><strong>🔴 다크모드 시인성 강화 — 팝업 모달 내 선명한 빨간색 [닫기] 버튼 탑재</strong>: 어두운 배경에서 찾기 어렵던 우측 상단 <code>✕</code> 대신, <strong>견적 정보</strong> 및 <strong>작업내역서</strong> 모달 우측 상단에 눈에 바로 띄는 빨간색 <strong>[닫기]</strong> 버튼을 달아 직관성을 높였습니다.</li>
           <li><strong>✨ 견적 정보 & 작업내역서 저장 시 깜빡임 자동 멈춤</strong>: 앱 시작 시 미입력 상태를 알리기 위해 깜빡이던 상단 버튼이, 정보를 한 번이라도 입력하고 저장하면 즉시 깜빡임을 멈추고 깔끔한 일반 버튼으로 전환됩니다.</li>
           <li><strong>⚡ 번개장터 · 🟢 중고나라 원클릭 시세 검색</strong>: 각 견적 카드마다 중고 거래 버튼이 탑재되었습니다. 조립PC는 복잡한 모델명 대신 <strong>CPU + 그래픽카드</strong> 핵심 사양(예: <code>7800X3D RTX 4070 SUPER</code>)으로 자동 변환하여 가장 정확한 중고 시세를 찾아 줍니다.</li>
@@ -565,7 +579,7 @@
     </section>
 
     <div class="manual-footer">
-      <p>컴퓨존 견적 자동화 Ver 9.0 · 개발 애플아저씨 · 기술 지원 및 문의 <a href="mailto:jskimjskim@gmail.com">jskimjskim@gmail.com</a></p>
+      <p>컴퓨존 견적 자동화 Ver X.15 · 개발 애플아저씨 · 기술 지원 및 문의 <a href="mailto:jskimjskim@gmail.com">jskimjskim@gmail.com</a></p>
       <p>본 프로그램은 컴퓨존 및 Apple 공식 스토어의 실시간 정보를 바탕으로 작동하며, 가격 및 프로모션은 공식 홈페이지 기준에 따릅니다.</p>
     </div>
   </div>

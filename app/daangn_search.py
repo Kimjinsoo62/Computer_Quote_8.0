@@ -23,7 +23,7 @@ ORIGIN = "https://www.daangn.com"
 REGION_API = ORIGIN + "/kr/api/v1/regions/keyword"
 SEARCH_PATH = "/kr/buy-sell/"
 NOMINATIM_URL = "https://nominatim.openstreetmap.org/reverse"
-NOMINATIM_UA = "ComputerQuote/9.0 (local used-pc compare; https://www.apple.com/kr)"
+NOMINATIM_UA = "ComputerQuote/X.15 (local used-pc compare; https://www.apple.com/kr)"
 USER_AGENT = (
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
     "(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
