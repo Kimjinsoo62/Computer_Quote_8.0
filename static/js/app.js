@@ -605,10 +605,8 @@ function ctoUpgradesForExcel(index = -1) {
   const picked = index >= 0 ? [quotes[index]] : quotes;
   const map = {};
   picked.forEach((q) => {
-    const orig = q?._ctoOriginal;
-    if (!orig || !q.tier_key) return;
-    const added = (q.parts || []).slice((orig.parts || []).length);
-    if (!added.length) return;
+    const added = q?._ctoAdded || [];
+    if (!q?._ctoOriginal || !q.tier_key || !added.length) return;
     map[q.tier_key] = added.map((p) => ({ category: p.category, name: p.name, amount: p.amount }));
   });
   return Object.keys(map).length ? JSON.stringify(map) : "";
@@ -1296,27 +1294,37 @@ function applyCtoChanges() {
   if (!targetQ._ctoOriginal) {
     targetQ._ctoOriginal = JSON.parse(JSON.stringify(baseQuoteForCto));
   }
-  targetQ.parts = JSON.parse(JSON.stringify(baseQuoteForCto.parts || []));
+  // 화면·Excel 이 같은 규칙으로 합치도록 원래 추가 품목도 따로 기억한다.
+  targetQ._ctoAdded = addedParts.map((p) => ({ category: p.category, name: p.name, amount: p.amount }));
+  targetQ.parts = mergeCtoParts(baseQuoteForCto.parts, targetQ._ctoAdded);
   targetQ.total = baseQuoteForCto.total + totalDelta;
   targetQ.price_source =
     totalDelta || addedParts.length ? "apple_cto" : (baseQuoteForCto.price_source || "apple_official");
-
-  addedParts.forEach((part) => {
-    const nextNo = targetQ.parts.length + 1;
-    targetQ.parts.push({
-      no: nextNo,
-      category: part.category,
-      name: part.name,
-      qty: part.qty,
-      unit_price: part.unit_price,
-      amount: part.amount,
-    });
-  });
 
   closeCtoModal();
   renderTabs(quoteData.quotes);
   renderSummaryCards(quoteData.quotes);
   renderDetail(quoteData.quotes);
+}
+
+// CTO 항목 → 같은 사양을 나타내는 기본 사양 행 (서버 main.py CTO_BASE_ROW 와 같게 유지)
+const CTO_BASE_ROW = { "통합 메모리": "메모리", "저장장치": "SSD", "프로세서": "CPU/SoC" };
+
+/** 기본 사양 행이 있는 CTO 항목은 그 행을 업그레이드 사양으로 바꾸고 금액을 더한다. 나머지는 아래에 붙인다. */
+function mergeCtoParts(baseParts, added) {
+  const parts = JSON.parse(JSON.stringify(baseParts || []));
+  (added || []).forEach((a) => {
+    const row = parts.find((p) => p.category === CTO_BASE_ROW[a.category]);
+    if (row) {
+      row.name = a.name;
+      row.amount = (row.amount || 0) + (a.amount || 0);
+      row.unit_price = row.amount;
+    } else {
+      parts.push({ category: a.category, name: a.name, qty: 1, unit_price: a.amount, amount: a.amount });
+    }
+  });
+  parts.forEach((p, i) => (p.no = i + 1));
+  return parts;
 }
 
 /** 적용된 CTO(추가 부품·추가 금액)를 tier_key 별로 기억해 둔다. 옵션 토글로 다시 불러올 때 쓴다. */
@@ -1326,7 +1334,7 @@ function snapshotCto(quotes) {
     const orig = q._ctoOriginal;
     if (!orig || !q.tier_key) return;
     const delta = (q.total || 0) - (orig.total || 0);
-    const added = (q.parts || []).slice((orig.parts || []).length);
+    const added = q._ctoAdded || [];
     if (!delta && !added.length) return;
     carry[q.tier_key] = {
       delta,
@@ -1344,8 +1352,8 @@ function reapplyCto(quotes, carry) {
     const c = carry[q.tier_key];
     if (!c) return;
     q._ctoOriginal = JSON.parse(JSON.stringify(q));
-    q.parts = q.parts || [];
-    c.parts.forEach((p) => q.parts.push({ ...p, no: q.parts.length + 1 }));
+    q._ctoAdded = c.parts;
+    q.parts = mergeCtoParts(q.parts, c.parts);
     q.total = (q.total || 0) + c.delta;
     q.price_source = c.priceSource || "apple_cto";
     if (c.sel) q._ctoSel = c.sel;

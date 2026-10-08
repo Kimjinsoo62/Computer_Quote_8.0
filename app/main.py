@@ -447,6 +447,10 @@ def api_apple_cto(tier_key: str, sel: str = "", changed: str = ""):
     }
 
 
+# CTO 항목 → 같은 사양을 나타내는 기본 사양 행 (static/js/app.js CTO_BASE_ROW 와 같게 유지)
+CTO_BASE_ROW = {"통합 메모리": "메모리", "저장장치": "SSD", "프로세서": "CPU/SoC"}
+
+
 def _apply_cto_upgrades(result, cto_json: str):
     """화면에서 적용한 CTO 추가 품목({tier_key: [{category, name, amount}]})을 견적에 더한다."""
     try:
@@ -462,7 +466,8 @@ def _apply_cto_upgrades(result, cto_json: str):
         if not isinstance(added, list) or not added:
             quotes.append(q)
             continue
-        parts = list(q.parts)
+        parts = [replace(p) for p in q.parts]
+        delta = 0
         for item in added[:20]:
             if not isinstance(item, dict):
                 continue
@@ -470,18 +475,22 @@ def _apply_cto_upgrades(result, cto_json: str):
                 amount = int(item.get("amount") or 0)
             except (TypeError, ValueError):
                 continue
-            # 금액 0 행도 넣는다: 칩 변경으로 함께 바뀐 메모리·저장장치 구성을 보여 준다.
+            category = str(item.get("category") or "CTO")[:40]
+            name = str(item.get("name") or "CTO 업그레이드")[:120]
+            delta += amount
+            # 메모리·SSD·칩처럼 기본 사양 행이 있으면 그 행을 업그레이드 사양으로 바꾸고 금액을 더한다.
+            base_row = next((p for p in parts if p.category == CTO_BASE_ROW.get(category)), None)
+            if base_row:
+                base_row.name = name
+                base_row.amount += amount
+                base_row.unit_price = base_row.amount
+                continue
+            # 금액 0 행도 넣는다: 칩 변경으로 함께 바뀐 구성을 보여 준다.
             parts.append(
-                QuotePart(
-                    no=len(parts) + 1,
-                    category=str(item.get("category") or "CTO")[:40],
-                    name=str(item.get("name") or "CTO 업그레이드")[:120],
-                    qty=1,
-                    unit_price=amount,
-                    amount=amount,
-                )
+                QuotePart(no=0, category=category, name=name, qty=1, unit_price=amount, amount=amount)
             )
-        delta = sum(p.amount for p in parts[len(q.parts):])
+        for i, p in enumerate(parts, 1):
+            p.no = i
         quotes.append(
             replace(
                 q,
