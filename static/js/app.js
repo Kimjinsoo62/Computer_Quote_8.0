@@ -963,7 +963,7 @@ qiModal?.addEventListener("click", (e) => {
 document.addEventListener("keydown", (e) => {
   if (e.key !== "Escape") return;
   if (qiModal && !qiModal.classList.contains("hidden")) qiClose();
-  if (cpModal && !cpModal.classList.contains("hidden")) cpClose();
+  if (ctoModal && !ctoModal.classList.contains("hidden")) closeCtoModal();
   if (trModal && !trModal.classList.contains("hidden")) closeTrModal();
   if (netModal && !netModal.classList.contains("hidden")) hide(netModal);
 });
