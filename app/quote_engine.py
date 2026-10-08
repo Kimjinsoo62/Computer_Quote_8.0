@@ -238,6 +238,7 @@ class Quote:
     price_source: str = "live"
     fetched_at: str = ""
     cto_groups: list[dict[str, Any]] = field(default_factory=list)
+    cto_live: bool = False  # 공식몰 구성하기 API 로 실시간 CTO 를 쓸 수 있는 Mac
 
 
 @dataclass
@@ -1513,6 +1514,7 @@ def fetch_apple_quotes(
                 price_source=source,
                 fetched_at=now,
                 cto_groups=list(item.get("cto_groups") or []),
+                cto_live=bool(item.get("cfg")),
             )
         )
 

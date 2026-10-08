@@ -13,6 +13,7 @@ import logging
 import re
 import threading
 import time
+import urllib.parse
 import urllib.request
 import zlib
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -30,7 +31,7 @@ HTML_TTL_SEC = 15 * 60
 CATALOG_TTL_SEC = 30 * 60
 FETCH_TIMEOUT_SEC = 20
 SNAPSHOT_PATH = Path(__file__).resolve().parent.parent / "apple_catalog_cache.json"
-CATALOG_SCHEMA = 2
+CATALOG_SCHEMA = 2  # 항목의 cfg(구성하기 API 정보)는 선택 항목이라 예전 스냅샷도 그대로 쓴다
 
 USER_AGENT = (
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
@@ -287,7 +288,10 @@ def _parse_family_page(url: str, fam: dict[str, Any]) -> list[dict[str, Any]]:
         candidates = _parse_mac_configurator(data, fam)
     else:
         candidates = _parse_metrics_products(data, fam)
-    return _pick_representatives(candidates, fam)
+    # 구성하기(CTO) 가격 API 의 컬렉션 이름. Mac 구매 페이지에만 있다.
+    m = re.search(r"updateConfigUrl:\s*'[^']*collection=([A-Za-z0-9_]+)", html)
+    collection = m.group(1) if m else ""
+    return _pick_representatives(candidates, fam, collection)
 
 
 def _extract_product_selection(html: str) -> dict[str, Any] | None:
@@ -375,6 +379,8 @@ def _parse_mac_configurator(data: dict[str, Any], fam: dict[str, Any]) -> list[d
                 "memory": memory,
                 "connection": "",
                 "group_key": group_key,
+                # 구성하기 API 에 그대로 넘길 원래 차원 값 (색상 포함)
+                "cfg_params": {k: str(v) for k, v in dims.items() if v},
                 "specs": {
                     "chip_label": chip_label,
                     "memory": memory_label,
@@ -439,7 +445,9 @@ def _parse_metrics_products(data: dict[str, Any], fam: dict[str, Any]) -> list[d
     return out
 
 
-def _pick_representatives(candidates: list[dict[str, Any]], fam: dict[str, Any]) -> list[dict[str, Any]]:
+def _pick_representatives(
+    candidates: list[dict[str, Any]], fam: dict[str, Any], collection: str = ""
+) -> list[dict[str, Any]]:
     grouped: dict[tuple, list[dict[str, Any]]] = {}
     for item in candidates:
         grouped.setdefault(item["group_key"], []).append(item)
@@ -449,7 +457,10 @@ def _pick_representatives(candidates: list[dict[str, Any]], fam: dict[str, Any])
         best = _pick_best(rows)
         if not best:
             continue
-        picked.append(_finalize_item(best, fam, cto_groups=_build_live_cto(best, rows)))
+        cfg = None
+        if collection and best.get("cfg_params"):
+            cfg = {"collection": collection, "params": dict(best["cfg_params"])}
+        picked.append(_finalize_item(best, fam, cto_groups=_build_live_cto(best, rows), cfg=cfg))
     return picked
 
 
@@ -474,6 +485,7 @@ def _finalize_item(
     item: dict[str, Any],
     fam: dict[str, Any],
     cto_groups: list[dict[str, Any]] | None = None,
+    cfg: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     family_label = _family_label(item, fam)
     specs = dict(item.get("specs") or {})
@@ -541,6 +553,7 @@ def _finalize_item(
         "price_source": "apple_official",
         "bom_key": "",
         "cto_groups": cto_groups or [],
+        "cfg": cfg,
     }
 
 
@@ -686,6 +699,245 @@ def fetch_apple_cto_options(tier_key: str) -> list[dict[str, Any]]:
         logger.warning("Apple CTO live sync failed for %s: %s", key, e)
     found = _lookup_cto(key)
     return found or []
+
+
+# ---------------------------------------------------------------------------
+# 구성하기(CTO) 실시간 가격: 공식몰 /shop/api/cto/update-config
+# 옵션 가격은 서로 독립적이지 않다(칩을 바꾸면 메모리 기본값·가격이 바뀐다).
+# 그래서 선택이 바뀔 때마다 전체 선택값으로 다시 물어 총액을 받는다.
+# ---------------------------------------------------------------------------
+CTO_LIVE_DIMS = {
+    "processor-dimensionChip-cpuCoreCount-gpuCoreCount": "프로세서",
+    "processor-cpuCoreCount-gpuCoreCount": "프로세서",
+    "memory-dimensionMemory": "통합 메모리",
+    "storage-dimensionCapacity": "저장장치",
+    "display-dimensionFinish": "디스플레이 마감",
+    "ethernet_adapter-ethernetPortCount": "이더넷",
+    "ethernet_adapter-ethernetBandwidth": "이더넷",
+    "power_adapter-wattage": "전원 어댑터",
+}
+_cfg_cache: dict[str, tuple[float, dict[str, Any]]] = {}
+
+
+def _update_config(cfg: dict[str, Any], selections: dict[str, str]) -> dict[str, Any] | None:
+    params = dict(cfg.get("params") or {})
+    for dim, val in (selections or {}).items():
+        if dim in CTO_LIVE_DIMS and val:
+            params[dim] = str(val)
+    # 칩+코어 조합을 바꾸면 칩 차원도 같이 맞춰야 API 가 그 구성으로 계산한다.
+    combo = params.get("processor-dimensionChip-cpuCoreCount-gpuCoreCount")
+    if combo and "processor-dimensionChip" in params:
+        params["processor-dimensionChip"] = combo.split("-")[0]
+    query = "&".join(
+        f"sv.{urllib.parse.quote(k)}={urllib.parse.quote(v)}" for k, v in sorted(params.items())
+    )
+    url = (
+        f"{APPLE_ORIGIN}/kr/shop/api/cto/update-config?collection="
+        f"{urllib.parse.quote(cfg['collection'])}&fae=true&{query}"
+    )
+    now = time.time()
+    with _cache_lock:
+        hit = _cfg_cache.get(url)
+        if hit and now - hit[0] < HTML_TTL_SEC:
+            return hit[1]
+    headers = {"User-Agent": USER_AGENT, "Accept": "application/json", "Accept-Language": "ko-KR,ko;q=0.9"}
+    try:
+        req = urllib.request.Request(url, headers=headers)
+        with urllib.request.urlopen(req, timeout=FETCH_TIMEOUT_SEC) as resp:
+            body = (json.loads(resp.read().decode("utf-8")) or {}).get("body") or {}
+    except Exception as e:
+        logger.warning("Apple update-config failed for %s: %s", url, e)
+        return None
+    if not body.get("options"):
+        return None
+    with _cache_lock:
+        _cfg_cache[url] = (time.time(), body)
+    return body
+
+
+def _live_option_label(dim: str, value: str) -> str:
+    v = str(value or "")
+    if dim.startswith("processor-"):
+        m = re.match(r"^([a-z0-9]+?)-(\d+)-(\d+)$", v)
+        if m:
+            return f"{_format_chip_token(m.group(1))} {m.group(2)}코어 CPU / {m.group(3)}코어 GPU"
+        return _human_dim("cpu_gpu", v)
+    if dim == "memory-dimensionMemory":
+        return _human_dim("memory", v)
+    if dim == "storage-dimensionCapacity":
+        return _human_dim("storage", v)
+    if dim == "display-dimensionFinish":
+        return _human_dim("finish", v)
+    if dim == "ethernet_adapter-ethernetPortCount":
+        return "이더넷 없음 (Wi-Fi)" if v == "0" else "기가비트 이더넷"
+    if dim == "ethernet_adapter-ethernetBandwidth":
+        m = re.match(r"^(\d+)(?:_(\d+))?gb", v)
+        if m:
+            speed = m.group(1) + (f".{m.group(2)}" if m.group(2) else "")
+            return f"{speed}Gb 이더넷"
+        return v
+    if dim == "power_adapter-wattage":
+        return f"{v.upper()} 전원 어댑터"
+    return v
+
+
+def _price_of(body: dict[str, Any], key: Any) -> int | None:
+    if not key:
+        return None
+    hit = (body.get("prices") or {}).get(key)
+    if not hit:
+        return None
+    try:
+        return int(round(float(hit.get("amount") or 0)))
+    except (TypeError, ValueError):
+        return None
+
+
+def _selected_values(body: dict[str, Any]) -> dict[str, str]:
+    out: dict[str, str] = {}
+    for dim, o in (body.get("options") or {}).items():
+        comp = o.get("compatibleOptions") or {}
+        sel = next((k for k, v in comp.items() if v.get("isSelected")), None)
+        sel = sel or next((k for k, v in comp.items() if v.get("isDefault")), None)
+        if sel is not None:
+            out[dim] = str(sel)
+    return out
+
+
+def _total_of(body: dict[str, Any]) -> int:
+    price = ((body.get("selectedKits") or {}).get("priceData") or {}).get("amount")
+    try:
+        return int(round(float(price or 0)))
+    except (TypeError, ValueError):
+        return 0
+
+
+def fetch_apple_cto_live(tier_key: str, selections: dict[str, str] | None = None) -> dict[str, Any] | None:
+    """구성하기 API 로 현재 선택의 옵션·총액·추가 품목 행을 만든다. 쓸 수 없으면 None."""
+    item = _lookup_item(str(tier_key or "").strip())
+    cfg = (item or {}).get("cfg")
+    if not cfg:
+        return None
+    base = _update_config(cfg, {})
+    if not base:
+        return None
+    sel = {k: str(v) for k, v in (selections or {}).items() if k in CTO_LIVE_DIMS and v}
+    cur = _update_config(cfg, sel) if sel else base
+    if not cur and sel:
+        # 칩을 바꾸면 이전 메모리·저장장치 값이 그 칩에서 불가능할 수 있다(예: M5 Max 는 48GB 부터).
+        # 프로세서부터 하나씩 더해 보며 API 가 받아 주는 조합만 남긴다.
+        ordered = sorted(sel.items(), key=lambda kv: 0 if kv[0].startswith("processor-") else 1)
+        accepted: dict[str, str] = {}
+        for dim, val in ordered:
+            trial = {**accepted, dim: val}
+            body = _update_config(cfg, trial)
+            if body:
+                accepted, cur = trial, body
+    if not cur:
+        return None
+
+    base_total = _total_of(base) or int(item.get("price") or 0)
+    total = _total_of(cur) or base_total
+    base_sel = _selected_values(base)
+    cur_sel = _selected_values(cur)
+
+    groups: list[dict[str, Any]] = []
+    for dim, name in CTO_LIVE_DIMS.items():
+        o = (cur.get("options") or {}).get(dim)
+        if not o:
+            continue
+        opts = []
+        for val, info in (o.get("compatibleOptions") or {}).items():
+            delta = _price_of(cur, info.get("priceDelta"))
+            if delta is None or info.get("isBlocked"):
+                continue
+            label = _live_option_label(dim, val)
+            is_sel = cur_sel.get(dim) == str(val)
+            if is_sel:
+                text = f"{label} (선택됨)"
+            elif delta == 0:
+                text = f"{label} (동일 가격)"
+            else:
+                text = f"{label} ({'+' if delta > 0 else ''}{delta:,}원)"
+            opts.append({"value": str(val), "label": text, "delta": delta, "selected": is_sel})
+        if len(opts) >= 2:
+            opts.sort(key=lambda x: x["delta"])
+            groups.append({"id": dim, "name": name, "options": opts})
+
+    # 기본 모델에서는 API 가 칩 변경을 주지 않는 경우가 있다(예: MacBook Pro 14 M5).
+    # 구매 페이지의 다른 완제품 가격으로 만든 프로세서 옵션을 붙이고, 선택하면 API 로 정확한 총액을 받는다.
+    proc_dim = next((d for d in base_sel if d.startswith("processor-") and d in CTO_LIVE_DIMS), "")
+    static_proc = next((g for g in item.get("cto_groups") or [] if g.get("id") == "cpu_gpu"), None)
+    if proc_dim and static_proc and not any(g["id"] == proc_dim for g in groups):
+        static_delta = {str(o.get("value")): int(o.get("delta") or 0) for o in static_proc.get("options") or []}
+        cur_val = cur_sel.get(proc_dim, "")
+        if cur_val and cur_val not in static_delta:
+            static_delta[cur_val] = total - base_total
+        opts = []
+        for val, d in sorted(static_delta.items(), key=lambda kv: kv[1]):
+            label = _live_option_label(proc_dim, val)
+            rel = d - static_delta.get(cur_val, 0)
+            if val == cur_val:
+                text = f"{label} (선택됨)"
+            elif rel == 0:
+                text = f"{label} (동일 가격)"
+            else:
+                text = f"{label} ({'+' if rel > 0 else ''}{rel:,}원)"
+            opts.append({"value": val, "label": text, "delta": rel, "selected": val == cur_val})
+        if len(opts) >= 2:
+            groups.insert(0, {"id": proc_dim, "name": CTO_LIVE_DIMS[proc_dim], "options": opts})
+    if not groups:
+        return None  # 바꿀 옵션이 없으면 구매 페이지 비교 옵션(예: MacBook Neo 저장장치)을 쓴다
+
+    # 추가 품목 행: 기본값에서 바뀐 차원마다 "기본값으로 되돌릴 때 빠지는 금액"을 그 행의 금액으로 둔다.
+    parts: list[dict[str, Any]] = []
+    for dim, name in CTO_LIVE_DIMS.items():
+        now_val = cur_sel.get(dim)
+        if not now_val or now_val == base_sel.get(dim):
+            continue
+        back = ((cur.get("options") or {}).get(dim) or {}).get("compatibleOptions", {}).get(base_sel.get(dim) or "")
+        back_delta = _price_of(cur, (back or {}).get("priceDelta"))
+        parts.append(
+            {
+                "category": name,
+                "name": f"[Apple] {_live_option_label(dim, now_val)}",
+                "amount": -back_delta if back_delta is not None else None,
+            }
+        )
+    # 행 금액 합이 총액 차이와 다르면(칩을 바꿔 메모리·저장장치 기본값이 함께 바뀐 경우 등)
+    # 차액을 금액을 알 수 없는 첫 행(대개 프로세서)에, 없으면 마지막 행에 넣는다.
+    # 금액이 0 인 행도 남긴다: "48GB 통합 메모리(포함)"처럼 바뀐 구성을 견적서에 보여 준다.
+    diff = total - base_total
+    known = sum(p["amount"] for p in parts if p["amount"] is not None)
+    unknown = [p for p in parts if p["amount"] is None]
+    for p in unknown:
+        p["amount"] = 0
+    if parts and known != diff:
+        (unknown[0] if unknown else parts[-1])["amount"] += diff - known
+    if not parts and diff:
+        parts = [{"category": "구성 변경", "name": "[Apple] 맞춤 구성", "amount": diff}]
+
+    return {
+        "live": True,
+        "groups": groups,
+        "total": total,
+        "base_total": base_total,
+        "selected": {k: v for k, v in cur_sel.items() if k in CTO_LIVE_DIMS},
+        "parts": parts,
+    }
+
+
+def _lookup_item(tier_key: str) -> dict[str, Any] | None:
+    with _cache_lock:
+        for payload in _catalog_cache.values():
+            for it in payload.get("items") or []:
+                if it.get("tier_key") == tier_key:
+                    return it
+    for payload in _load_all_snapshots().values():
+        for it in (payload or {}).get("items") or []:
+            if it.get("tier_key") == tier_key:
+                return it
+    return None
 
 
 def _lookup_cto(tier_key: str) -> list[dict[str, Any]] | None:

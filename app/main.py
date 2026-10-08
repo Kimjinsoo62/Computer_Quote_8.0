@@ -21,7 +21,7 @@ from app.config import (
     QUOTE_DISCLAIMER,
 )
 from app.excel_export import build_excel
-from app.apple_scraper import fetch_apple_cto_options
+from app.apple_scraper import fetch_apple_cto_live, fetch_apple_cto_options
 from app.used_market import used_market_links
 from app.quote_info import load_quote_info, reset_quote_info, save_quote_info
 from app.quote_engine import (
@@ -415,10 +415,33 @@ def api_apple_refresh(cat_key: str = "all"):
 
 
 @app.get("/api/apple/cto/{tier_key}")
-def api_apple_cto(tier_key: str):
+def api_apple_cto(tier_key: str, sel: str = ""):
+    """Mac 은 공식몰 구성하기 API 로 실시간 옵션·총액을(live), 그 외는 구매 페이지 비교 옵션을 준다.
+    sel: 현재 선택 {차원: 값} JSON. 바뀔 때마다 다시 호출해 정확한 총액을 받는다."""
+    selections: dict = {}
+    if sel:
+        try:
+            parsed = json.loads(sel)
+            if isinstance(parsed, dict):
+                selections = {str(k): str(v) for k, v in parsed.items()}
+        except ValueError:
+            selections = {}
+    live = fetch_apple_cto_live(tier_key, selections)
+    if live:
+        return {
+            "tier_key": tier_key,
+            "live": True,
+            "options": live["groups"],
+            "total": live["total"],
+            "base_total": live["base_total"],
+            "selected": live["selected"],
+            "parts": live["parts"],
+            "source": "apple_cto_api",
+        }
     options = fetch_apple_cto_options(tier_key)
     return {
         "tier_key": tier_key,
+        "live": False,
         "options": options,
         "source": "apple_official_catalog",
     }
@@ -447,8 +470,7 @@ def _apply_cto_upgrades(result, cto_json: str):
                 amount = int(item.get("amount") or 0)
             except (TypeError, ValueError):
                 continue
-            if not amount:
-                continue
+            # 금액 0 행도 넣는다: 칩 변경으로 함께 바뀐 메모리·저장장치 구성을 보여 준다.
             parts.append(
                 QuotePart(
                     no=len(parts) + 1,

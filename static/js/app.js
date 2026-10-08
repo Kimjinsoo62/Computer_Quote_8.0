@@ -47,12 +47,14 @@ let activeCtoTierKey = null;
 let activeCtoIndex = null;
 let currentCtoOptions = [];
 let baseQuoteForCto = null;
+let ctoLive = null; // 공식몰 구성하기 API 응답 {options, total, base_total, selected, parts}. 없으면 비교 옵션 방식
 
 function isAppleQuote(q) {
   return currentStore === "apple" || (q && String(q.price_source || "").startsWith("apple"));
 }
 
 function hasLiveCto(q) {
+  if (q?.cto_live) return true;
   const groups = q?.cto_groups;
   return Array.isArray(groups) && groups.some((g) => (g.options || g.choices || []).length >= 2);
 }
@@ -1121,8 +1123,16 @@ async function openCtoModal(idx, tierKey) {
 
   showBusy("CTO 사양 옵션 불러오는 중…");
   try {
-    const res = await fetch(`/api/apple/cto/${encodeURIComponent(tierKey)}`);
+    ctoLive = null;
+    // 이미 적용한 구성이 있으면 그 선택으로 다시 연다.
+    const sel = baseQ._ctoSel ? `?sel=${encodeURIComponent(JSON.stringify(baseQ._ctoSel))}` : "";
+    const res = await fetch(`/api/apple/cto/${encodeURIComponent(tierKey)}${sel}`);
     const data = await res.json();
+    if (data.live) {
+      renderLiveCto(data);
+      show(ctoModal);
+      return;
+    }
     currentCtoOptions = data.options || [];
     if (!currentCtoOptions.length && Array.isArray(baseQ.cto_groups)) {
       currentCtoOptions = baseQ.cto_groups;
@@ -1169,7 +1179,62 @@ async function openCtoModal(idx, tierKey) {
   }
 }
 
+/** 구성하기 API 응답으로 선택 상자를 그린다. 값을 바꾸면 전체 선택으로 다시 물어 정확한 총액을 받는다. */
+function renderLiveCto(data) {
+  ctoLive = data;
+  currentCtoOptions = data.options || [];
+  const body = $("#ctoFormContainer");
+  if (!body) return;
+  body.innerHTML = currentCtoOptions
+    .map(
+      (grp) => `
+      <div class="cto-group" style="margin-bottom: 20px;">
+        <label style="display: block; font-weight: 700; margin-bottom: 8px; color: var(--accent);">${grp.name}</label>
+        <select id="cto_select_${grp.id}" class="cto-select" data-group-id="${grp.id}">
+          ${grp.options
+            .map((opt) => `<option value="${opt.value}"${opt.selected ? " selected" : ""}>${opt.label}</option>`)
+            .join("")}
+        </select>
+      </div>`
+    )
+    .join("");
+  currentCtoOptions.forEach((grp) => {
+    $(`#cto_select_${grp.id}`)?.addEventListener("change", () => refreshLiveCto());
+  });
+  showLiveCtoTotal();
+}
+
+function showLiveCtoTotal() {
+  if (!ctoLive || !baseQuoteForCto) return;
+  // 카드 합계에 초기 세팅비 등 Apple 본체 외 금액이 있으면 그대로 더한다.
+  const extra = Math.max(0, (baseQuoteForCto.total || 0) - (ctoLive.base_total || 0));
+  $("#ctoTotalPrice").textContent = fmt((ctoLive.total || 0) + extra);
+}
+
+async function refreshLiveCto(selections) {
+  if (!ctoLive) return;
+  const sel = selections || {};
+  if (!selections) {
+    currentCtoOptions.forEach((grp) => {
+      const el = $(`#cto_select_${grp.id}`);
+      if (el) sel[grp.id] = el.value;
+    });
+  }
+  $("#ctoTotalPrice").textContent = "계산 중…";
+  $$(".cto-select").forEach((el) => (el.disabled = true));
+  try {
+    const res = await fetch(`/api/apple/cto/${encodeURIComponent(activeCtoTierKey)}?sel=${encodeURIComponent(JSON.stringify(sel))}`);
+    const data = await res.json();
+    if (!data.live) throw new Error("구성 가격을 받지 못했습니다.");
+    renderLiveCto(data);
+  } catch (e) {
+    alert("CTO 가격 계산 실패: " + e.message);
+    renderLiveCto(ctoLive);
+  }
+}
+
 function updateCtoTotalPrice() {
+  if (ctoLive) return showLiveCtoTotal();
   if (!baseQuoteForCto) return;
   let totalDelta = 0;
 
@@ -1195,7 +1260,16 @@ function applyCtoChanges() {
   let totalDelta = 0;
   const addedParts = [];
 
-  currentCtoOptions.forEach((grp) => {
+  if (ctoLive) {
+    // 구성하기 API 가 계산한 총액과 추가 품목 행을 그대로 쓴다.
+    totalDelta = (ctoLive.total || 0) - (ctoLive.base_total || 0);
+    (ctoLive.parts || []).forEach((p) =>
+      addedParts.push({ category: p.category, name: p.name, qty: 1, unit_price: p.amount, amount: p.amount })
+    );
+    targetQ._ctoSel = addedParts.length ? { ...ctoLive.selected } : null;
+  }
+
+  if (!ctoLive) currentCtoOptions.forEach((grp) => {
     const sel = $(`#cto_select_${grp.id}`);
     if (sel) {
       const opts = grp.options || grp.choices || [];
@@ -1222,7 +1296,8 @@ function applyCtoChanges() {
   }
   targetQ.parts = JSON.parse(JSON.stringify(baseQuoteForCto.parts || []));
   targetQ.total = baseQuoteForCto.total + totalDelta;
-  targetQ.price_source = totalDelta ? "apple_cto" : (baseQuoteForCto.price_source || "apple_official");
+  targetQ.price_source =
+    totalDelta || addedParts.length ? "apple_cto" : (baseQuoteForCto.price_source || "apple_official");
 
   addedParts.forEach((part) => {
     const nextNo = targetQ.parts.length + 1;
@@ -1249,11 +1324,13 @@ function snapshotCto(quotes) {
     const orig = q._ctoOriginal;
     if (!orig || !q.tier_key) return;
     const delta = (q.total || 0) - (orig.total || 0);
-    if (!delta) return;
+    const added = (q.parts || []).slice((orig.parts || []).length);
+    if (!delta && !added.length) return;
     carry[q.tier_key] = {
       delta,
-      parts: JSON.parse(JSON.stringify((q.parts || []).slice((orig.parts || []).length))),
+      parts: JSON.parse(JSON.stringify(added)),
       priceSource: q.price_source,
+      sel: q._ctoSel || null,
     };
   });
   return carry;
@@ -1269,6 +1346,7 @@ function reapplyCto(quotes, carry) {
     c.parts.forEach((p) => q.parts.push({ ...p, no: q.parts.length + 1 }));
     q.total = (q.total || 0) + c.delta;
     q.price_source = c.priceSource || "apple_cto";
+    if (c.sel) q._ctoSel = c.sel;
   });
 }
 
@@ -1280,6 +1358,7 @@ function closeCtoModal() {
 $("#ctoClose")?.addEventListener("click", closeCtoModal);
 $("#ctoCancelBtn")?.addEventListener("click", closeCtoModal);
 $("#ctoResetBtn")?.addEventListener("click", () => {
+  if (ctoLive) return refreshLiveCto({}); // 빈 선택 = 공식몰 기본 구성
   currentCtoOptions.forEach((grp) => {
     const sel = $(`#cto_select_${grp.id}`);
     if (sel) sel.value = "0";
