@@ -82,7 +82,7 @@ def get_lan_ip() -> str:
 
 
 @app.get("/api/server-info")
-async def api_server_info():
+def api_server_info():
     """로컬 및 네트워크 접근 URL 반환"""
     lan_ip = get_lan_ip()
     port = 8090
@@ -129,7 +129,7 @@ def _margin_filename_label(margin: int, is_apple: bool) -> str:
 
 
 @app.get("/", response_class=HTMLResponse)
-async def landing(request: Request):
+def landing(request: Request):
     lan_ip = get_lan_ip()
     port = 8090
     return templates.TemplateResponse(
@@ -149,19 +149,19 @@ async def landing(request: Request):
 
 
 @app.get("/manual", response_class=HTMLResponse)
-async def manual(request: Request):
+def manual(request: Request):
     """사용설명서 — 상단 메뉴에서 연다."""
     return templates.TemplateResponse(request, "사용설명서.html", {})
 
 
 @app.get("/calc", response_class=HTMLResponse)
-async def calc_page(request: Request):
+def calc_page(request: Request):
     """독립 창으로 띄우는 계산기. 메인 견적 창 밖으로 옮길 수 있다."""
     return templates.TemplateResponse(request, "calc.html", {})
 
 
 @app.post("/api/calc/open")
-async def api_calc_open(request: Request, payload: dict = Body(default={})):
+def api_calc_open(request: Request, payload: dict = Body(default={})):
     """견적 --app 창과 별도 프로세스로 계산기를 연다. 모든 버튼이 보이게 크기를 고정한다."""
     base = str(request.base_url).rstrip("/")
     result = open_calc_window(
@@ -177,13 +177,13 @@ async def api_calc_open(request: Request, payload: dict = Body(default={})):
 
 
 @app.get("/api/logic")
-async def api_logic():
+def api_logic():
     return {"steps": get_logic_steps()}
 
 
 
 @app.get("/api/used/links")
-async def api_used_links(q: str = "", cpu: str = "", gpu: str = ""):
+def api_used_links(q: str = "", cpu: str = "", gpu: str = ""):
     model = (q or "").strip()
     cpu_name = (cpu or "").strip()
     gpu_name = (gpu or "").strip()
@@ -217,7 +217,7 @@ def api_update_restart():
 
 
 @app.post("/api/shutdown")
-async def api_shutdown():
+def api_shutdown():
     """백엔드 종료 · 포트 정리 · 캐시 삭제 · 앱 브라우저 창 닫기"""
     schedule_full_shutdown(delay_sec=0.5)
     return {
@@ -227,7 +227,7 @@ async def api_shutdown():
 
 
 @app.get("/api/today")
-async def api_today(monitor: int = 0, keyboard: int = 0, ram32: int = 0, setup: int = 0):
+def api_today(monitor: int = 0, keyboard: int = 0, ram32: int = 0, setup: int = 0):
     result = fetch_today_quotes(
         include_monitor=bool(monitor),
         include_keyboard=bool(keyboard),
@@ -238,7 +238,7 @@ async def api_today(monitor: int = 0, keyboard: int = 0, ram32: int = 0, setup: 
 
 
 @app.get("/api/today/{tier_key}")
-async def api_today_tier(
+def api_today_tier(
     tier_key: str, monitor: int = 0, keyboard: int = 0, ram32: int = 0, setup: int = 0
 ):
     try:
@@ -255,22 +255,22 @@ async def api_today_tier(
 
 
 @app.get("/api/quote-info")
-async def api_quote_info_get():
+def api_quote_info_get():
     return load_quote_info()
 
 
 @app.post("/api/quote-info")
-async def api_quote_info_save(info: dict = Body(...)):
+def api_quote_info_save(info: dict = Body(...)):
     return save_quote_info(info)
 
 
 @app.delete("/api/quote-info")
-async def api_quote_info_delete():
+def api_quote_info_delete():
     return reset_quote_info()
 
 
 @app.get("/api/category/{cat_key}")
-async def api_category(cat_key: str, monitor: int = 0, keyboard: int = 0, setup: int = 0):
+def api_category(cat_key: str, monitor: int = 0, keyboard: int = 0, setup: int = 0):
     # 구버전 UI가 /api/category/game-pc 로 호출해도 404 대신 위자드 유도
     if cat_key in ("game-pc", "game"):
         return {
@@ -306,7 +306,7 @@ async def api_category(cat_key: str, monitor: int = 0, keyboard: int = 0, setup:
 
 
 @app.get("/api/game-pc/meta")
-async def api_game_pc_meta():
+def api_game_pc_meta():
     try:
         return fetch_game_pc_meta()
     except (RuntimeError, OSError, TimeoutError) as e:
@@ -314,7 +314,7 @@ async def api_game_pc_meta():
 
 
 @app.post("/api/game-pc/recommend")
-async def api_game_pc_recommend(payload: dict = Body(...)):
+def api_game_pc_recommend(payload: dict = Body(...)):
     games = payload.get("games") or []
     resolution = payload.get("resolution") or ""
     titles = payload.get("titles") or []
@@ -344,7 +344,7 @@ async def api_game_pc_recommend(payload: dict = Body(...)):
 
 
 @app.post("/api/price-search")
-async def api_price_search(payload: dict = Body(...)):
+def api_price_search(payload: dict = Body(...)):
     try:
         min_price = int(payload.get("min_price") or 0)
         max_price = int(payload.get("max_price") or 0)
@@ -383,7 +383,7 @@ async def api_price_search(payload: dict = Body(...)):
 
 
 @app.get("/api/apple/{cat_key}")
-async def api_apple(cat_key: str, monitor: int = 0, keyboard: int = 0, setup: int = 0, refresh: int = 0):
+def api_apple(cat_key: str, monitor: int = 0, keyboard: int = 0, setup: int = 0, refresh: int = 0):
     try:
         result = fetch_apple_quotes(
             cat_key,
@@ -400,7 +400,7 @@ async def api_apple(cat_key: str, monitor: int = 0, keyboard: int = 0, setup: in
 
 @app.get("/api/apple/refresh")
 @app.post("/api/apple/refresh")
-async def api_apple_refresh(cat_key: str = "all"):
+def api_apple_refresh(cat_key: str = "all"):
     """Apple 공식몰 실시간 크롤링 강제 갱신: 기존 캐시 및 이전 데이터를 완전 삭제하고 공홈 실시간 데이터로 100% 교체"""
     from app.apple_scraper import clear_apple_catalog_cache
     clear_apple_catalog_cache(cat_key if cat_key != "all" else None)
@@ -413,7 +413,7 @@ async def api_apple_refresh(cat_key: str = "all"):
 
 
 @app.get("/api/apple/cto/{tier_key}")
-async def api_apple_cto(tier_key: str):
+def api_apple_cto(tier_key: str):
     options = fetch_apple_cto_options(tier_key)
     return {
         "tier_key": tier_key,
@@ -423,7 +423,7 @@ async def api_apple_cto(tier_key: str):
 
 
 @app.get("/api/download/excel")
-async def download_excel(
+def download_excel(
     cat: str = "ai",
     monitor: int = 0,
     keyboard: int = 0,
@@ -572,20 +572,20 @@ async def download_excel(
 # 컴퓨터 작업내역서 API
 # ---------------------------------------------------------------------------
 @app.get("/api/task-reports")
-async def api_get_task_reports():
+def api_get_task_reports():
     """저장된 작업내역서 목록 조회"""
     return {"reports": load_task_reports()}
 
 
 @app.post("/api/task-reports")
-async def api_create_task_report(data: dict = Body(...)):
+def api_create_task_report(data: dict = Body(...)):
     """새 작업내역서 저장"""
     created = create_task_report(data)
     return {"status": "ok", "report": created}
 
 
 @app.get("/api/task-reports/{report_id}")
-async def api_get_task_report_detail(report_id: str):
+def api_get_task_report_detail(report_id: str):
     """작업내역서 단건 조회"""
     report = get_task_report(report_id)
     if not report:
@@ -594,7 +594,7 @@ async def api_get_task_report_detail(report_id: str):
 
 
 @app.put("/api/task-reports/{report_id}")
-async def api_update_task_report(report_id: str, data: dict = Body(...)):
+def api_update_task_report(report_id: str, data: dict = Body(...)):
     """작업내역서 수정"""
     updated = update_task_report(report_id, data)
     if not updated:
@@ -603,7 +603,7 @@ async def api_update_task_report(report_id: str, data: dict = Body(...)):
 
 
 @app.delete("/api/task-reports/{report_id}")
-async def api_delete_task_report(report_id: str):
+def api_delete_task_report(report_id: str):
     """작업내역서 삭제"""
     deleted = delete_task_report(report_id)
     if not deleted:
@@ -612,7 +612,7 @@ async def api_delete_task_report(report_id: str):
 
 
 @app.post("/api/task-reports/download/excel")
-async def api_download_task_report_excel(data: dict = Body(...)):
+def api_download_task_report_excel(data: dict = Body(...)):
     """현재 작성 중인 작업내역서 데이터로 즉시 엑셀 파일 생성 다운로드"""
     buf = build_task_report_excel(data)
     cust_name = data.get("customer_name") or "고객"
@@ -629,7 +629,7 @@ async def api_download_task_report_excel(data: dict = Body(...)):
 
 
 @app.get("/api/task-reports/{report_id}/download/excel")
-async def api_download_saved_task_report_excel(report_id: str):
+def api_download_saved_task_report_excel(report_id: str):
     """저장된 작업내역서 ID로 엑셀 파일 다운로드"""
     report = get_task_report(report_id)
     if not report:
