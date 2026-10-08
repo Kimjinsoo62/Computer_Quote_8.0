@@ -436,6 +436,7 @@ def download_excel(
     titles: str = "",
     min_price: int = 0,
     max_price: int = 0,
+    price_type: str = "assembled",
     index: int = -1,
 ):
     """index 를 주면 해당 카드 한 건만, 없으면 카테고리 전체를 내려준다."""
@@ -485,20 +486,29 @@ def download_excel(
             raise HTTPException(status_code=404, detail=str(e)) from e
         kr_label = f"게임으로PC찾기_{resolution or 'PC'}_견적"
     elif cat in ("price", "price-search"):
+        is_notebook = price_type == "notebook"
         try:
-            result, _meta = fetch_assembled_quotes_by_price(
-                min_price,
-                max_price,
-                include_monitor=include_monitor,
-                include_keyboard=include_keyboard,
-                include_setup=include_setup,
-                limit=PRICE_SEARCH_LIMIT,
-            )
+            if is_notebook:
+                result, _meta = fetch_notebook_quotes_by_price(
+                    min_price,
+                    max_price,
+                    limit=PRICE_SEARCH_LIMIT,
+                )
+            else:
+                result, _meta = fetch_assembled_quotes_by_price(
+                    min_price,
+                    max_price,
+                    include_monitor=include_monitor,
+                    include_keyboard=include_keyboard,
+                    include_setup=include_setup,
+                    limit=PRICE_SEARCH_LIMIT,
+                )
         except ValueError as e:
             raise HTTPException(status_code=400, detail=str(e)) from e
         except RuntimeError as e:
             raise HTTPException(status_code=404, detail=str(e)) from e
-        kr_label = f"금액대로찾기_{min_price}_{max_price}_견적"
+        kind = "노트북금액대로찾기" if is_notebook else "금액대로찾기"
+        kr_label = f"{kind}_{min_price}_{max_price}_견적"
     elif cat.startswith("apple_") or cat == "apple":
         apple_sub = cat.replace("apple_", "") if cat != "apple" else "macbook"
         try:

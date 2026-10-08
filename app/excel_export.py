@@ -1159,12 +1159,11 @@ def build_excel(
         ws7.row_dimensions[r7].height = 22.0
         r7 += 1
 
-        # 푸터 연락처/계좌
+        # 푸터 연락처
         ws7.merge_cells(f"A{r7}:F{r7}")
         ws7[f"A{r7}"] = (
             f"영업담당: {sup_mgr} / Tel: {sup_phone}"
             + (f" / E-mail: {sup_email}" if sup_email else "")
-            + " / 새마을금고 9002-2039-2710-6"
         )
         _set_cell(ws7[f"A{r7}"], font=Font(name=FONT_NAME, size=9, color="666666"), alignment=center)
         ws7.row_dimensions[r7].height = 18.0
@@ -1307,8 +1306,7 @@ def build_excel(
 
         notices8 = [
             "1. 납품일자 : 기간 협의                         | 2. 유효기간 : 견적일로부터 7일",
-            "3. 결제조건 : 선결제 (세금계산서 발행)         | 4. 계좌번호 : 새마을금고 9002-2039-2710-6",
-            "※ [James 4:8] Draw near to God, and he will draw near to you.",
+            "3. 결제조건 : 선결제 (세금계산서 발행)",
         ]
         for note in notices8:
             ws8.merge_cells(f"A{r8}:F{r8}")

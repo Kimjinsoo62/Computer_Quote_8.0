@@ -588,6 +588,7 @@ function excelQueryParams(index = -1) {
   if (currentCat === "price" && lastPriceQuery) {
     params.set("min_price", String(lastPriceQuery.min_price));
     params.set("max_price", String(lastPriceQuery.max_price));
+    params.set("price_type", lastPriceQuery.type || "assembled");
   }
   if (index >= 0) params.set("index", String(index));
   return params.toString();
@@ -1845,7 +1846,7 @@ async function submitPriceSearch(opts = {}) {
 
   const minPrice = manwonToWon(minMan);
   const maxPrice = manwonToWon(maxMan);
-  lastPriceQuery = { min_price: minPrice, max_price: maxPrice };
+  lastPriceQuery = { min_price: minPrice, max_price: maxPrice, type: priceTargetType };
   currentCat = "price";
   if (!keepView) resultView = "card";
   updateExtrasUI();
@@ -1863,7 +1864,11 @@ async function submitPriceSearch(opts = {}) {
   const loadingText = loading?.querySelector("p");
   const submitBtn = $("#priceSearchSubmit");
 
-  priceSetStatus("조립PC를 검색하는 중… 추천·아이웍스·프리미엄 목록을 확인합니다.");
+  priceSetStatus(
+    priceTargetType === "notebook"
+      ? "노트북을 검색하는 중… 컴퓨존 노트북 목록을 확인합니다."
+      : "조립PC를 검색하는 중… 추천·아이웍스·프리미엄 목록을 확인합니다."
+  );
   if (submitBtn) submitBtn.disabled = true;
   show(loading);
   if (loadingText) {
