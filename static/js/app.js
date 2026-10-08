@@ -1936,6 +1936,11 @@ $("#btnResultViewToggle")?.addEventListener("click", () => {
 });
 
 document.addEventListener("DOMContentLoaded", () => {
+  // [종료] 후 새로고침된 페이지: 견적을 불러오지 않고 서버 종료 · 창 닫기만 한다
+  if (new URLSearchParams(window.location.search).get("shutdown") === "1") {
+    finishShutdown();
+    return;
+  }
   initNetworkModal();
   updateExtrasUI();
   loadQuoteInfo();
@@ -2023,6 +2028,15 @@ async function shutdownApp() {
 
   await clearClientCaches();
 
+  // 브라우저 새로고침 → 새로 뜬 페이지가 finishShutdown() 으로 서버 종료 후 창을 닫는다
+  window.location.replace("/?shutdown=1");
+}
+
+async function finishShutdown() {
+  // 주소를 "/" 로 되돌려 둔다 (탭 복원 시 다시 종료되지 않도록)
+  history.replaceState(null, "", "/");
+  showShutdownDonePage();
+
   try {
     await fetch("/api/shutdown", {
       method: "POST",
@@ -2033,7 +2047,7 @@ async function shutdownApp() {
     // 서버가 바로 내려가도 정상
   }
 
-  // 앱 전용 창이면 닫히고, 일반 탭이면 안내 페이지 표시
+  // 앱 전용 창이면 닫히고, 일반 탭이면 안내 페이지가 남는다
   setTimeout(() => {
     try {
       window.open("", "_self");
