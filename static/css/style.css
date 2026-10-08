@@ -567,6 +567,16 @@ a:hover { text-decoration: underline; }
   background: rgba(37, 99, 235, 0.3); color: #fff; border-color: #3b82f6;
   transform: translateY(-1px);
 }
+/* 견적서 하단 대표 이미지 (화면 전용) */
+.estimate-image {
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--border, rgba(148, 163, 184, 0.25));
+}
+.estimate-image img {
+  max-height: 200px; max-width: 100%; object-fit: contain;
+  background: #fff; border-radius: 4px; padding: 4px;
+}
+.estimate-image-caption, .estimate-image-status { color: var(--muted); font-size: 1rem; }
 /* 원본 페이지 대표 이미지 보기 */
 .btn-image {
   background: rgba(168, 85, 247, 0.15); color: #d8b4fe;

@@ -536,7 +536,45 @@ function renderEstimateForm(q) {
       <p>${storeFooterNotice}</p>
       <p><a href="${q.url}" target="_blank" rel="noopener">${q.url}</a></p>
     </div>
+    ${q.url ? `
+    <div class="estimate-image" data-src-url="${escapeHtml(q.url)}">
+      <span class="estimate-image-status">🖼️ 대표 이미지 불러오는 중…</span>
+    </div>` : ""}
   </div>`;
+}
+
+// 원본 페이지 URL → 대표 이미지 URL ("" = 없음). 같은 상품을 다시 열 때 서버에 묻지 않는다.
+const detailImageCache = new Map();
+
+/** 견적서 하단에 원본 페이지 대표 이미지를 표시한다. 견적을 열 때만 불러온다. */
+async function loadDetailImage(container) {
+  const box = container?.querySelector(".estimate-image");
+  if (!box) return;
+  const srcUrl = box.dataset.srcUrl;
+  let image = detailImageCache.get(srcUrl);
+  if (image === undefined) {
+    try {
+      const res = await fetch(`/api/image?url=${encodeURIComponent(srcUrl)}`);
+      image = res.ok ? (await res.json()).image || "" : "";
+    } catch (_) {
+      image = "";
+    }
+    detailImageCache.set(srcUrl, image);
+  }
+  if (!box.isConnected || box.dataset.srcUrl !== srcUrl) return; // 그사이 다른 견적으로 바뀜
+  if (!image) {
+    box.innerHTML = '<span class="estimate-image-status">대표 이미지를 찾지 못했습니다.</span>';
+    return;
+  }
+  const source = srcUrl.includes("apple.com") ? "Apple 공식몰 (제품군 대표 사진)" : "컴퓨존 상품 사진";
+  box.innerHTML = `
+    <a href="${escapeHtml(image)}" target="_blank" rel="noopener" title="클릭하면 원본 크기로 엽니다">
+      <img src="${escapeHtml(image)}" alt="대표 이미지" loading="lazy" />
+    </a>
+    <span class="estimate-image-caption">대표 이미지 · ${source} · 클릭하면 크게 보기</span>`;
+  box.querySelector("img")?.addEventListener("error", () => {
+    box.innerHTML = '<span class="estimate-image-status">대표 이미지를 불러오지 못했습니다.</span>';
+  });
 }
 
 function renderTabs(quotes) {
@@ -574,6 +612,7 @@ function renderDetail(quotes) {
   detailArea.querySelector(".btn-open-cto-main")?.addEventListener("click", () => {
     openCtoModal(activeTab, q.tier_key);
   });
+  loadDetailImage(detailArea);
 }
 
 function excelQueryParams(index = -1) {
