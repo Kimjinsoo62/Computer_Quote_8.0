@@ -14,6 +14,9 @@ for /f "tokens=5" %%a in ('netstat -aon ^| findstr :8090 ^| findstr LISTENING') 
     taskkill /F /PID %%a >nul 2>&1
 )
 
+REM "update.bat restart": app already pulled, just reinstall deps and restart
+if /i "%~1"=="restart" goto deps
+
 echo.
 echo [1] Downloading latest version (Git Pull)...
 git pull origin main
@@ -27,6 +30,7 @@ if %ERRORLEVEL% NEQ 0 (
     echo [SUCCESS] Download complete.
 )
 
+:deps
 echo.
 echo [2] Checking dependencies...
 if exist requirements.txt (

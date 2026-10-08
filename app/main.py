@@ -40,6 +40,7 @@ from app.quote_engine import (
 )
 from app.calc_window import close_calc_window, open_calc_window
 from app.shutdown_service import schedule_full_shutdown
+from app.update_service import apply_update, check_update, schedule_restart
 from app.task_report import (
     build_task_report_excel,
     create_task_report,
@@ -197,28 +198,22 @@ async def api_used_links(q: str = "", cpu: str = "", gpu: str = ""):
 
 
 
-@app.post("/api/update")
-async def api_update():
-    import subprocess
-    import threading
-    import time
-    import os
-    
-    script_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "update.bat")
-    if not os.path.exists(script_path):
-        return {"success": False, "message": "update.bat 파일을 찾을 수 없습니다."}
-    
-    def run_update_and_shutdown():
-        time.sleep(1)
-        # update.bat를 새로운 콘솔 창에서 독립적으로 실행
-        subprocess.Popen(
-            ["cmd.exe", "/c", "start", "cmd.exe", "/c", script_path],
-            cwd=os.path.dirname(script_path)
-        )
-        os._exit(0)
-        
-    threading.Thread(target=run_update_and_shutdown, daemon=True).start()
-    return {"success": True, "message": "업데이트 프로세스를 시작했습니다."}
+@app.get("/api/update/check")
+def api_update_check():
+    """GitHub 원격 저장소에 새 커밋이 있는지 확인"""
+    return check_update()
+
+
+@app.post("/api/update/apply")
+def api_update_apply():
+    """승인 후 git pull 로 프로젝트 갱신"""
+    return apply_update()
+
+
+@app.post("/api/update/restart")
+def api_update_restart():
+    """의존성 확인 후 서버 재시작 (update.bat restart)"""
+    return schedule_restart()
 
 
 @app.post("/api/shutdown")

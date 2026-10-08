@@ -2049,32 +2049,64 @@ $("#btnShutdownNav")?.addEventListener("click", shutdownApp);
 // ==========================================================================
 // 🔄 업데이트 (Update)
 // ==========================================================================
+// 1) GitHub 확인 → 2) 업데이트 유무 팝업 · 승인 → 3) git pull → 4) 재시작 안내 팝업
 async function updateApp() {
-  if (!confirm("최신 버전으로 업데이트를 진행할까요?\n업데이트 중 명령 프롬프트 창이 나타날 수 있으며 완료 후 자동으로 서버가 재시작됩니다.")) {
+  let info;
+  showBusy("GitHub에서 업데이트 확인 중…");
+  try {
+    const res = await fetch("/api/update/check", { cache: "no-store" });
+    info = await res.json();
+  } catch (err) {
+    info = { ok: false, message: "서버에 연결할 수 없습니다." };
+  } finally {
+    hideBusy();
+  }
+  if (!info.ok) {
+    alert("업데이트 확인 실패\n\n" + info.message);
     return;
   }
-  
-  try {
-    const res = await fetch("/api/update", { method: "POST" });
-    const data = await res.json();
-    if (data.success) {
-      alert(data.message + "\n\n서버가 다시 시작되면 이 창이 자동으로 새로고침됩니다.");
-      reloadWhenServerBack();
-    } else {
-      alert("업데이트 시작 실패:\n" + data.message);
-    }
-  } catch (err) {
-    console.error("업데이트 요청 에러:", err);
-    alert("업데이트 요청 중 오류가 발생했습니다. 백엔드가 이미 종료되었을 수 있습니다. 서버가 다시 시작되면 새로고침합니다.");
-    reloadWhenServerBack();
+  if (!info.behind) {
+    alert("현재 최신 버전입니다.\n받을 업데이트가 없습니다.");
+    return;
   }
+
+  const more = info.behind > info.commits.length ? `\n… 외 ${info.behind - info.commits.length}건` : "";
+  const dirtyNote = info.dirty ? "\n\n※ 이 PC에서 수정한 파일이 있어 업데이트가 실패할 수 있습니다." : "";
+  if (!confirm(`새 업데이트가 ${info.behind}건 있습니다.\n\n${info.commits.join("\n")}${more}${dirtyNote}\n\n지금 업데이트할까요?`)) {
+    return;
+  }
+
+  let result;
+  showBusy("업데이트 다운로드 중 (git pull)…");
+  try {
+    const res = await fetch("/api/update/apply", { method: "POST" });
+    result = await res.json();
+  } catch (err) {
+    result = { ok: false, message: "서버에 연결할 수 없습니다." };
+  } finally {
+    hideBusy();
+  }
+  if (!result.ok) {
+    alert("업데이트 실패\n\n" + result.message);
+    return;
+  }
+
+  const depsNote = result.deps_changed ? "\n필요한 구성요소(의존성)도 재시작할 때 자동으로 설치됩니다." : "";
+  if (!confirm(`업데이트가 완료되었습니다. (변경 파일 ${result.changed_files}개)\n변경 내용을 적용하려면 프로그램을 재시작해야 합니다.${depsNote}\n\n지금 재시작할까요?`)) {
+    alert("다음에 프로그램을 재시작하면 업데이트가 적용됩니다.");
+    return;
+  }
+  try {
+    await fetch("/api/update/restart", { method: "POST" });
+  } catch (_) {}
+  reloadWhenServerBack();
 }
 
 // 업데이트 후 재시작된 서버가 응답하면 이 창을 새로고침 (START.bat은 새 창을 열지 않음)
 function reloadWhenServerBack() {
   const startedAt = Date.now();
   let wentDown = false;
-  showBusy("업데이트 진행 중… 서버 재시작 대기");
+  showBusy("재시작 중… 서버 응답 대기");
   const timer = setInterval(async () => {
     let up = false;
     try {
@@ -2086,7 +2118,7 @@ function reloadWhenServerBack() {
     if (!up) wentDown = true;
     const elapsed = Date.now() - startedAt;
     const sec = Math.round(elapsed / 1000);
-    setBusyText(wentDown ? `업데이트 진행 중… 다운로드·설치 후 재시작 대기 (${sec}초)` : `업데이트 시작 중… (${sec}초)`);
+    setBusyText(wentDown ? `재시작 중… 구성요소 확인 후 서버 대기 (${sec}초)` : `재시작 준비 중… (${sec}초)`);
     // 기존 서버가 내려간 뒤 다시 올라왔거나, 3분이 지나면 새로고침
     if ((wentDown && up) || elapsed > 180000) {
       clearInterval(timer);
