@@ -8,7 +8,7 @@ from urllib.parse import quote
 
 from fastapi import Body, FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse, Response
+from fastapi.responses import HTMLResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
@@ -21,6 +21,7 @@ from app.config import (
     QUOTE_DISCLAIMER,
 )
 from app.excel_export import build_excel
+from app.image_lookup import find_representative_image
 from app.apple_scraper import fetch_apple_cto_live, fetch_apple_cto_options
 from app.used_market import used_market_links
 from app.quote_info import load_quote_info, reset_quote_info, save_quote_info
@@ -412,6 +413,24 @@ def api_apple_refresh(cat_key: str = "all"):
         "message": "Apple 공식몰 최신 데이터로 완전 갱신 완료",
         "data": today_quotes_to_dict(result),
     }
+
+
+@app.get("/api/image")
+def api_image(url: str, redirect: int = 0):
+    """카드 원본 페이지의 대표 이미지. redirect=1 이면 이미지로 바로 이동한다([🖼️ 이미지] 버튼)."""
+    try:
+        image = find_representative_image(url)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
+    if redirect:
+        if not image:
+            return HTMLResponse(
+                "<meta charset='utf-8'><p style='font-family:sans-serif;font-size:10pt'>"
+                "원본 페이지에서 대표 이미지를 찾지 못했습니다.</p>",
+                status_code=404,
+            )
+        return RedirectResponse(image)
+    return {"url": url, "image": image}
 
 
 @app.get("/api/apple/cto/{tier_key}")

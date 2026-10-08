@@ -378,6 +378,10 @@ function summaryCardHtml(q, i) {
         <a href="${q.url}" target="_blank" rel="noopener" class="btn btn-sm btn-buy" onclick="event.stopPropagation()">
           🛍️ 상품상세 ↗
         </a>`}
+        ${q.url ? `
+        <a href="/api/image?redirect=1&url=${encodeURIComponent(q.url)}" target="_blank" rel="noopener" class="btn btn-sm btn-image" title="원본 페이지의 대표 이미지를 새 창으로 봅니다" onclick="event.stopPropagation()">
+          🖼️ 이미지
+        </a>` : ""}
         <button type="button" class="btn btn-sm btn-coupang btn-coupang-search" data-keyword="${coupangKeyword}" onclick="openCoupangSearch(decodeURIComponent(this.dataset.keyword), event)">
           🛒 쿠팡검색 ↗
         </button>
