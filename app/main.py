@@ -446,6 +446,7 @@ def download_excel(
     include_setup = bool(setup)
     hide_prices = not bool(unitprice)
     is_apple = cat.startswith("apple_") or cat == "apple"
+    is_notebook = cat in ("price", "price-search") and price_type == "notebook"
     try:
         margin_pct = int(margin)
     except (TypeError, ValueError):
@@ -486,7 +487,6 @@ def download_excel(
             raise HTTPException(status_code=404, detail=str(e)) from e
         kr_label = f"게임으로PC찾기_{resolution or 'PC'}_견적"
     elif cat in ("price", "price-search"):
-        is_notebook = price_type == "notebook"
         try:
             if is_notebook:
                 result, _meta = fetch_notebook_quotes_by_price(
@@ -527,14 +527,16 @@ def download_excel(
         raise HTTPException(status_code=404, detail=f"Unknown category: {cat}")
 
     apple_sub = cat.replace("apple_", "") if is_apple and cat != "apple" else ("macbook" if cat == "apple" else "")
-    kr_label += _extra_label(
-        include_monitor,
-        include_keyboard,
-        include_ram32,
-        include_setup=include_setup,
-        is_apple=is_apple,
-        apple_cat=apple_sub,
-    )
+    # 노트북은 모니터·키보드·세팅비·메모리 옵션이 적용되지 않으므로 파일명에도 붙이지 않는다.
+    if not is_notebook:
+        kr_label += _extra_label(
+            include_monitor,
+            include_keyboard,
+            include_ram32,
+            include_setup=include_setup,
+            is_apple=is_apple,
+            apple_cat=apple_sub,
+        )
     result = (
         result
         if is_apple
