@@ -1064,31 +1064,32 @@ def fetch_apple_cto_live(
     if not groups:
         return None  # 바꿀 옵션이 없으면 구매 페이지 비교 옵션(예: MacBook Neo 저장장치)을 쓴다
 
-    # 추가 품목 행: 기본값에서 바뀐 차원마다 "기본값으로 되돌릴 때 빠지는 금액"을 그 행의 금액으로 둔다.
+    # 추가 품목 행: 기본값에서 바뀐 차원마다 "지금 구성에서 고를 수 있는 가장 싼 옵션 대비 추가 금액"을 둔다.
+    # (예: M5 Max 에서 64GB → 48GB 대비 680,000원, 4TB → 2TB 대비 1,700,000원)
+    # 프로세서 행은 나머지 금액을 받는다: 칩 차액 + 칩 때문에 함께 올라간 최소 메모리·저장장치 금액.
     parts: list[dict[str, Any]] = []
+    proc_row: dict[str, Any] | None = None
     for dim, name in CTO_LIVE_DIMS.items():
         now_val = cur_sel.get(dim)
         if not now_val or now_val == base_sel.get(dim):
             continue
-        back = ((cur.get("options") or {}).get(dim) or {}).get("compatibleOptions", {}).get(base_sel.get(dim) or "")
-        back_delta = _price_of(cur, (back or {}).get("priceDelta"))
-        parts.append(
-            {
-                "category": name,
-                "name": f"[Apple] {_live_option_label(dim, now_val)}",
-                "amount": -back_delta if back_delta is not None else None,
-            }
-        )
-    # 행 금액 합이 총액 차이와 다르면(칩을 바꿔 메모리·저장장치 기본값이 함께 바뀐 경우 등)
-    # 차액을 금액을 알 수 없는 첫 행(대개 프로세서)에, 없으면 마지막 행에 넣는다.
-    # 금액이 0 인 행도 남긴다: "48GB 통합 메모리(포함)"처럼 바뀐 구성을 견적서에 보여 준다.
+        row = {"category": name, "name": f"[Apple] {_live_option_label(dim, now_val)}", "amount": 0}
+        if dim.startswith("processor-"):
+            proc_row = row
+        else:
+            comp = ((cur.get("options") or {}).get(dim) or {}).get("compatibleOptions") or {}
+            deltas = [
+                d for d in (_price_of(cur, v.get("priceDelta")) for v in comp.values() if not v.get("isBlocked"))
+                if d is not None
+            ]
+            row["amount"] = -min(deltas) if deltas and min(deltas) < 0 else 0
+        parts.append(row)
+    # 행 금액 합이 총액 차이와 다르면 차액을 프로세서 행에, 없으면 마지막 행에 넣는다.
+    # 금액이 0 인 행도 남긴다: "48GB 통합 메모리"처럼 칩 때문에 바뀐 구성을 견적서에 보여 준다.
     diff = total - base_total
-    known = sum(p["amount"] for p in parts if p["amount"] is not None)
-    unknown = [p for p in parts if p["amount"] is None]
-    for p in unknown:
-        p["amount"] = 0
+    known = sum(p["amount"] for p in parts)
     if parts and known != diff:
-        (unknown[0] if unknown else parts[-1])["amount"] += diff - known
+        (proc_row or parts[-1])["amount"] += diff - known
     if not parts and diff:
         parts = [{"category": "구성 변경", "name": "[Apple] 맞춤 구성", "amount": diff}]
 
